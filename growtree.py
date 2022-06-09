@@ -1,4 +1,3 @@
-#from xml.etree.ElementTree import C14NWriterTarget
 from ete3 import Tree
 import random
 import numpy
@@ -25,19 +24,16 @@ def growtree(b,d,s,time,shape_b,shape_d,shape_s):
     rng = random.Random()
     t = Tree()
     while(True):
-        curr_b = b
-        curr_d = d
-        curr_s = s
         curr_t = 0
-        rate_any_event = curr_b + curr_d + curr_s
+        rate_any_event = b + d + s
         wait_t = rng.expovariate(rate_any_event)
         curr_t += wait_t
         if(curr_t <= time):
-            curr_b = curr_b/rate_any_event
-            curr_d = curr_d/rate_any_event
-            curr_s = curr_s/rate_any_event
-            event = gen_event(curr_b, curr_d, curr_s)
-            print(event)
+            b_weighted = b/rate_any_event
+            d_weighted = d/rate_any_event
+            s_weighted = s/rate_any_event
+            event = gen_event(b_weighted, d_weighted, s_weighted)
+            #print(event)
             if(event == "birth"):
                 c1 = growtree(b,d,s,(time-curr_t)/2,shape_b,shape_d,shape_s)
                 t.add_child(c1)
