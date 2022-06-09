@@ -1,4 +1,4 @@
-from xml.etree.ElementTree import C14NWriterTarget
+#from xml.etree.ElementTree import C14NWriterTarget
 from ete3 import Tree
 import random
 import numpy
@@ -37,11 +37,11 @@ def growtree(b,d,s,time,shape_b,shape_d,shape_s):
             curr_d = curr_d/rate_any_event
             curr_s = curr_s/rate_any_event
             event = gen_event(curr_b, curr_d, curr_s)
-            #print(event)
+            print(event)
             if(event == "birth"):
-                c1 = growtree(b,d,s,time-curr_t,shape_b,shape_d,shape_s)
+                c1 = growtree(b,d,s,(time-curr_t)/2,shape_b,shape_d,shape_s)
                 t.add_child(c1)
-                c2 = growtree(b,d,s,time-curr_t,shape_b,shape_d,shape_s)  
+                c2 = growtree(b,d,s,(time-curr_t)/2,shape_b,shape_d,shape_s)  
                 t.add_child(c2)
                 #print("returning after b")
                 return t
