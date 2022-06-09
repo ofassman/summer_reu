@@ -24,11 +24,13 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
     rng = random.Random()
     t = Tree()
     while(True):
+        # finding the wait time to any event (b, d, or s) based on rates
         curr_t = 0
         rate_any_event = b + d + s
         wait_t = rng.expovariate(rate_any_event)
         curr_t += wait_t
         if(curr_t <= max_time): # if wait time did not exceed max_time
+            # calculating weighted rates
             b_weighted = b/rate_any_event
             d_weighted = d/rate_any_event
             s_weighted = s/rate_any_event
