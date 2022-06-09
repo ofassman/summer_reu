@@ -42,6 +42,7 @@ def growtree(b,d,s,time,shape_b,shape_d,shape_s):
                 #print("returning after b")
                 return t
             elif(event == "sub"):
+                #print("sub, new rates:",b,d,s)
                 b = gen_rate(b,shape_b)
                 d = gen_rate(d,shape_d)
                 s = gen_rate(s,shape_s)
