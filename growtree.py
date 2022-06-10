@@ -3,6 +3,9 @@ import random
 import numpy
 
 def gen_event(b,d,s):
+    """
+    Randomly generates an event based on weighted birth, death, and substitution rates.
+    """
     rng = random.Random()
     weights = [b,d,s]
     rnd = rng.random() * sum(weights)
@@ -17,10 +20,20 @@ def gen_event(b,d,s):
     return "sub"
     
 def gen_rate(mean,shape):
+    """
+    Samples a new rate based on a gamma distribution.
+    """
     scale_calc = mean/shape
     return numpy.random.gamma(shape, scale=scale_calc, size=None)
 
 def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
+    """
+    Returns a birth-death tree. All rates (birth, death, and substitution) may change upon a substitution.
+    'b', 'd', and 's' are the initial values of the birth, death, and substitution rates (respectively).
+    'max_time' is the total amount of time that can be used to generate events to construct the tree
+    (if this time is exceeded, the tree returns). Thus the tree stops growing when either all lineages
+    go extinct or 'max_time' is exceeded.
+    """
     rng = random.Random()
     t = Tree()
     while(True):
