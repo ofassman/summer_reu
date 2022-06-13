@@ -1,3 +1,4 @@
+from multiprocessing.connection import wait
 from ete3 import Tree
 import random
 import numpy
@@ -26,7 +27,7 @@ def gen_rate(mean,shape):
     scale_calc = mean/shape
     return numpy.random.gamma(shape, scale=scale_calc, size=None)
 
-def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
+def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
     """
     Returns a birth-death tree. All rates (birth, death, and substitution) may change upon a substitution.
     'b', 'd', and 's' are the initial values of the birth, death, and substitution rates (respectively).
@@ -36,6 +37,7 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
     """
     rng = random.Random()
     t = Tree()
+    t.dist = 0
     while(True):
         # finding the wait time to any event (b, d, or s) based on rates
         curr_t = 0
@@ -43,6 +45,10 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
         wait_t = rng.expovariate(rate_any_event)
         curr_t += wait_t
         if(curr_t <= max_time): # if wait time did not exceed max_time
+            if(branch_info == 0):
+                t.dist += wait_t
+            if(branch_info == 2):
+                t.dist += s * wait_t
             # calculating weighted rates
             b_weighted = b/rate_any_event
             d_weighted = d/rate_any_event
@@ -50,8 +56,8 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
             event = gen_event(b_weighted, d_weighted, s_weighted) # generate event based on weighted rates
             if(event == "birth"): # recursively call fn for children, same rates but different max_time
                 # max_time for children should be the time remaining (max_time - curr_time) divided by 2 (since 2 children)
-                c1 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s)
-                c2 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s)  
+                c1 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)
+                c2 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)  
                 if(c1 == None and c2 == None):
                     return None
                 if(c1 != None):
@@ -64,6 +70,8 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
                 b = gen_rate(b,shape_b)
                 d = gen_rate(d,shape_d)
                 s = gen_rate(s,shape_s)
+                if(branch_info == 1):
+                    t.dist += 1
             else: # event is death so immediately return t (lineage ends)
                 return None
         else: # wait time exceeded max_time (a timeout) so return tree (lineage ends)
