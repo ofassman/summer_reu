@@ -48,24 +48,34 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s):
             d_weighted = d/rate_any_event
             s_weighted = s/rate_any_event
             event = gen_event(b_weighted, d_weighted, s_weighted) # generate event based on weighted rates
-            #print(event)
             if(event == "birth"): # recursively call fn for children, same rates but different max_time
                 # max_time for children should be the time remaining (max_time - curr_time) divided by 2 (since 2 children)
                 c1 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s)
-                t.add_child(c1)
                 c2 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s)  
-                t.add_child(c2)
-                #print("returning after b")
+                if(c1 == None and c2 == None):
+                    return None
+                if(c1 != None):
+                    t.add_child(c1)
+                if(c2 != None):
+                    t.add_child(c2)
                 return t
             elif(event == "sub"): # change current rates based on sampling from a gamma dist and continue to next event
                 # mean of gamma dist is current rate
-                #print("sub, new rates:",b,d,s)
                 b = gen_rate(b,shape_b)
                 d = gen_rate(d,shape_d)
                 s = gen_rate(s,shape_s)
             else: # event is death so immediately return t (lineage ends)
-                #print("returning after d")
-                return t
+                return None
         else: # wait time exceeded max_time (a timeout) so return tree (lineage ends)
-            #print("returning after t")
             return t
+
+def getNewick(t):
+    if (t != None):
+        return t.write(format=1)
+    return ";"
+
+def outputNewick(t,name):
+    if (t != None):
+        t.write(format=1, outfile=name + ".nw")
+    else:
+        print("Empty tree, no output file created.")
