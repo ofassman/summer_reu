@@ -108,7 +108,7 @@ def outputNewick(t,name):
 
 def tree_sum(t):
     """
-    Returns the sum of all the distances of the branches in the tree. 
+    Returns the sum of the distances of all the branches in the tree. 
     """
     if(t == None):
         return 0
