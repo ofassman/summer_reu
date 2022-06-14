@@ -110,14 +110,14 @@ def tree_sum(t):
     """
     Returns the sum of the distances of all the branches in the tree. 
     """
-    if(t == None):
+    if(t == None): # empty tree
         return 0
     left_h = 0
     right_h = 0
     num_c = len(t.children)  
-    if(num_c == 1):
+    if(num_c == 1): # tree with 1 child
         left_h = tree_sum(t.children[0]) + t.children[0].dist
-    elif(num_c == 2):
+    elif(num_c == 2): # tree with 2 children
         left_h = tree_sum(t.children[0]) + t.children[0].dist
         right_h = tree_sum(t.children[1]) + t.children[1].dist
     return left_h + right_h
