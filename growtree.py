@@ -105,3 +105,19 @@ def outputNewick(t,name):
         t.write(format=1, outfile=name + ".nw")
     else:
         print("Empty tree, no output file created.")
+
+def tree_sum(t):
+    """
+    Returns the sum of all the distances of the branches in the tree. 
+    """
+    if(t == None):
+        return 0
+    left_h = 0
+    right_h = 0
+    num_c = len(t.children)  
+    if(num_c == 1):
+        left_h = tree_sum(t.children[0]) + t.children[0].dist
+    elif(num_c == 2):
+        left_h = tree_sum(t.children[0]) + t.children[0].dist
+        right_h = tree_sum(t.children[1]) + t.children[1].dist
+    return left_h + right_h
