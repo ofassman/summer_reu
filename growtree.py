@@ -1,4 +1,3 @@
-from multiprocessing.connection import wait
 from ete3 import Tree
 import random
 import numpy
@@ -38,7 +37,7 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
     what information is attached to branches. If 'branch_info' is 0, the branch length is a variable of the 
     time for that lineage. If 'branch_info' is 1, the branch length is a variable of the number of substitutions 
     that occurred in that lineage. If 'branch_info' is 2, the branch length is a variable of the expected number 
-    of substitutions of that lineage. 'shape_b', 'shape_d', and 'shape_s' are the shapes of the respective 
+    of substitutions for that lineage. 'shape_b', 'shape_d', and 'shape_s' are the shapes of the respective 
     gamma distributions from which each rate is sampled from upon a substitution.
     """
     rng = random.Random()
