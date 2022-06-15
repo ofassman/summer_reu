@@ -2,6 +2,55 @@ from ete3 import Tree
 import random
 import numpy
 
+def gen_sequence(length,off_lim = None):
+    seq = ""
+    if(off_lim == None):
+        while(length > 0):
+            rnum = random.randint(0, 3)
+            if(rnum == 0):
+                seq += "A"
+            elif(rnum == 1):
+                seq += "T"
+            elif(rnum == 2):
+                seq += "G"
+            else:
+                seq += "C"
+            length -= 1
+    else:
+        if(off_lim == "A"):
+            rnum = random.randint(0, 2)
+            if(rnum == 0):
+                seq += "T"
+            elif(rnum == 1):
+                seq += "G"
+            elif(rnum == 2):
+                seq += "C"
+        elif(off_lim == "T"):
+            rnum = random.randint(0, 2)
+            if(rnum == 0):
+                seq += "A"
+            elif(rnum == 1):
+                seq += "G"
+            elif(rnum == 2):
+                seq += "C"
+        elif(off_lim == "G"):
+            rnum = random.randint(0, 2)
+            if(rnum == 0):
+                seq += "A"
+            elif(rnum == 1):
+                seq += "T"
+            elif(rnum == 2):
+                seq += "C"
+        else:
+            rnum = random.randint(0, 2)
+            if(rnum == 0):
+                seq += "A"
+            elif(rnum == 1):
+                seq += "T"
+            elif(rnum == 2):
+                seq += "G"
+    return seq
+
 def gen_event(b,d,s):
     """
     Randomly generates an event based on weighted birth, death, and substitution rates.
@@ -26,7 +75,7 @@ def gen_rate(mean,shape):
     scale_calc = mean/shape
     return numpy.random.gamma(shape, scale=scale_calc, size=None)
 
-def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
+def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
     """
     Returns a birth-death tree. All rates (birth, death, and substitution) may change upon a substitution.
     'b', 'd', and 's' are the initial values of the birth, death, and substitution rates (respectively).
@@ -43,6 +92,7 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
     rng = random.Random()
     # initializing the tree and branch length
     t = Tree()
+    t.name = seq
     t.dist = 0
     while(True):
         # finding the wait time to any event (b, d, or s) based on rates
@@ -64,8 +114,8 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
             event = gen_event(b_weighted, d_weighted, s_weighted) # generate event based on weighted rates
             if(event == "birth"): # recursively call fn for children, same rates but different max_time
                 # max_time for children should be the time remaining (max_time - curr_time) divided by 2 (since 2 children)
-                c1 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)
-                c2 = growtree(b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)  
+                c1 = growtree(seq,b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)
+                c2 = growtree(seq,b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)  
                 if(c1 == None and c2 == None): # both children are extinct so lineage is extinct (return None)
                     return None
                 # children are only concatenated onto the parent tree if they are extant (non-None)
@@ -79,6 +129,16 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
                 b = gen_rate(b,shape_b)
                 d = gen_rate(d,shape_d)
                 s = gen_rate(s,shape_s)
+                sub_site = random.randint(0, len(seq))
+                old_letter = seq[sub_site]
+                sub_letter = gen_sequence(1, off_lim=old_letter)
+                new_seq = ""
+                for i in range(0, sub_site, 1):
+                    new_seq += seq[i : i + 1]
+                new_seq += sub_letter
+                for j in range(sub_site + 1, len(seq), 1):
+                    new_seq += seq[j : j + 1]
+                seq = new_seq
                 # if branch length is a variable of number of substitutions, increase lineage's branch length by 1
                 if(branch_info == 1):
                     t.dist += 1
@@ -86,6 +146,11 @@ def growtree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
                 return None
         else: # wait time exceeded max_time so return tree (lineage ends from timeout)
             return t
+
+def gen_tree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info,seq_length):
+    seq = gen_sequence(seq_length)
+    t = growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info)
+    return t
 
 def getNewick(t):
     """
