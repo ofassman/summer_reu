@@ -4,8 +4,13 @@ import numpy
 import statistics
 
 def gen_sequence(length,off_lim = None):
+    """
+    Randomly generates a 'length' long genetic sequence of bases. 'off_lim' is by default 'None', but can be used
+    to specify a base that is not allowed to appear in the sequence (e.g. upon a substitution, the base that was 
+    previously in the substitution site is not a valid newly substituted base).
+    """
     seq = ""
-    if(off_lim == None):
+    if(off_lim == None): # no restrictions on bases
         while(length > 0):
             rnum = random.randint(0, 3)
             if(rnum == 0):
@@ -18,7 +23,7 @@ def gen_sequence(length,off_lim = None):
                 seq += "C"
             length -= 1
     else:
-        if(off_lim == "A"):
+        if(off_lim == "A"): # sequence cannot include 'A'
             rnum = random.randint(0, 2)
             if(rnum == 0):
                 seq += "T"
@@ -26,7 +31,7 @@ def gen_sequence(length,off_lim = None):
                 seq += "G"
             elif(rnum == 2):
                 seq += "C"
-        elif(off_lim == "T"):
+        elif(off_lim == "T"): # sequence cannot include 'T'
             rnum = random.randint(0, 2)
             if(rnum == 0):
                 seq += "A"
@@ -34,7 +39,7 @@ def gen_sequence(length,off_lim = None):
                 seq += "G"
             elif(rnum == 2):
                 seq += "C"
-        elif(off_lim == "G"):
+        elif(off_lim == "G"): # sequence cannot include 'G'
             rnum = random.randint(0, 2)
             if(rnum == 0):
                 seq += "A"
@@ -43,7 +48,7 @@ def gen_sequence(length,off_lim = None):
             elif(rnum == 2):
                 seq += "C"
         else:
-            rnum = random.randint(0, 2)
+            rnum = random.randint(0, 2) # sequence cannot include 'C'
             if(rnum == 0):
                 seq += "A"
             elif(rnum == 1):
@@ -78,17 +83,7 @@ def gen_rate(mean,shape):
 
 def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
     """
-    Returns a birth-death tree. All rates (birth, death, and substitution) may change upon a substitution.
-    'b', 'd', and 's' are the initial values of the birth, death, and substitution rates (respectively).
-    'max_time' is the total amount of time that can be used to generate events to construct the tree
-    (if this time is exceeded, the tree returns). Thus the tree stops growing when either all lineages
-    go extinct or 'max_time' is exceeded. Only extant lineages are present in the final tree. If there
-    are no extant lineages, 'None' will be returned by the function. 'branch_info' is an argument to specify 
-    what information is attached to branches. If 'branch_info' is 0, the branch length is a variable of the 
-    time for that lineage. If 'branch_info' is 1, the branch length is a variable of the number of substitutions 
-    that occurred in that lineage. If 'branch_info' is 2, the branch length is a variable of the expected number 
-    of substitutions for that lineage. 'shape_b', 'shape_d', and 'shape_s' are the shapes of the respective 
-    gamma distributions from which each rate is sampled from upon a substitution.
+    Returns a birth-death tree. Used as a helper function for 'gen_tree()' that produces the birth-death tree.
     """
     rng = random.Random()
     # initializing the tree and branch length
@@ -149,7 +144,22 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
             return t
 
 def gen_tree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info,seq_length):
-    seq = gen_sequence(seq_length)
+    """
+    Returns a birth-death tree. All rates (birth, death, and substitution) may change upon a substitution.
+    'b', 'd', and 's' are the initial values of the birth, death, and substitution rates (respectively).
+    'max_time' is the total amount of time that can be used to generate events to construct the tree
+    (if this time is exceeded, the tree returns). Thus the tree stops growing when either all lineages
+    go extinct or 'max_time' is exceeded. Only extant lineages are present in the final tree. If there
+    are no extant lineages, 'None' will be returned by the function. 'branch_info' is an argument to specify 
+    what information is attached to branches. If 'branch_info' is 0, the branch length is a variable of the 
+    time for that lineage. If 'branch_info' is 1, the branch length is a variable of the number of substitutions 
+    that occurred in that lineage. If 'branch_info' is 2, the branch length is a variable of the expected number 
+    of substitutions for that lineage. 'shape_b', 'shape_d', and 'shape_s' are the shapes of the respective 
+    gamma distributions from which each rate is sampled from upon a substitution. 'seq_length' specifies the 
+    length of the genetic sequence for the cells (the root will have a randomly generated sequence of length 
+    'seq_length' and subsequent lineages will carry on this sequence, with modifications upon a substitution).
+    """
+    seq = gen_sequence(seq_length) # generate random genetic sequence for root cell 
     t = growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info)
     return t
 
@@ -172,46 +182,64 @@ def outputNewick(t,name):
     else:
         print("Empty tree, no output file created.")
 
-def tree_branch_lst(t,arr):
+#################### TREE STATISTICS ########################################
+
+def __tree_branch_lst(t,arr):
+    """
+    Returns an array of branch lengths. Private helper function used for calculating summary
+    stats regarding branches.
+    """
     if(t == None): # empty tree
         return []
-    arr.append(t.dist)
+    arr.append(t.dist) 
     num_c = len(t.children)  
     if(num_c == 1): # tree with 1 child
-        tree_branch_lst(t.children[0], arr) 
+        __tree_branch_lst(t.children[0], arr) 
     elif(num_c == 2): # tree with 2 children
-        tree_branch_lst(t.children[0], arr) 
-        tree_branch_lst(t.children[1], arr) 
+        __tree_branch_lst(t.children[0], arr) 
+        __tree_branch_lst(t.children[1], arr) 
     return arr
 
 def tree_branch_sum(t):
     """
     Returns the sum of the distances of all the branches in the tree. 
     """
-    branch_arr = tree_branch_lst(t,[])
+    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return sum(branch_arr)
 
-def tree_branch_median(t):
-    branch_arr = tree_branch_lst(t,[])
-    if(branch_arr == []):
-        return 0
-    return statistics.median(branch_arr)
-
 def tree_branch_mean(t):
-    branch_arr = tree_branch_lst(t,[])
+    """
+    Returns the mean of the distances of all the branches in the tree. 
+    """
+    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return statistics.mean(branch_arr)
 
+def tree_branch_median(t):
+    """
+    Returns the median of the distances of all the branches in the tree. 
+    """
+    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
+    if(branch_arr == []):
+        return 0
+    return statistics.median(branch_arr)
+
 def tree_branch_variance(t):
-    branch_arr = tree_branch_lst(t,[])
+    """
+    Returns the variance of the distances of all the branches in the tree. 
+    """
+    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return statistics.variance(branch_arr)
 
-def tree_height(t): # aka max depth
+def tree_height(t): 
+    """
+    Returns the height (maximum depth) of the tree. 
+    """
     if t == None:
         return 0 
     left_h = 0
@@ -224,46 +252,87 @@ def tree_height(t): # aka max depth
         right_h = tree_height(t.children[1]) 
     return max(left_h, right_h) + t.dist
 
-def tree_root_dist(t):
-    if t == None or t.up == None:
+def __tree_root_dist(node):
+    """
+    Returns the distance from a node to the root. Private helper function used for calculating 
+    summary stats regarding tree depth.
+    """
+    if node == None or node.up == None:
         return 0 
-    return tree_root_dist(t.up) + t.dist
+    return __tree_root_dist(node.up) + node.dist
 
-def tree_depth_lst(t,arr):
-    if(t == None):
+def __tree_depth_lst(node,arr):
+    """
+    Returns an array of leaf depths. Private helper function used for calculating summary
+    stats regarding tree depth.
+    """
+    if(node == None):
         return []
-    if(t.is_leaf()):
-        arr.append(tree_root_dist(t))
-    else:
-        num_c = len(t.children)  
+    if(node.is_leaf()): # if node is leaf, add it's depth to 'arr'
+        arr.append(__tree_root_dist(node))
+    else: # node is not leaf so recurse to find leaves
+        num_c = len(node.children)  
         if(num_c == 1): # tree with 1 child
-            tree_depth_lst(t.children[0],arr) 
+            __tree_depth_lst(node.children[0],arr) 
         elif(num_c == 2): # tree with 2 children
-            tree_depth_lst(t.children[0],arr) 
-            tree_depth_lst(t.children[1],arr) 
+            __tree_depth_lst(node.children[0],arr) 
+            __tree_depth_lst(node.children[1],arr) 
     return arr
 
-def tree_mean_depth(t):
-    depth_arr = tree_depth_lst(t,[])
+def tree_depth_mean(t):
+    """
+    Returns the mean of leaf depths in the tree. 
+    """
+    depth_arr = __tree_depth_lst(t,[]) # get array of leaf depths
     if(depth_arr == []):
         return 0
     return statistics.mean(depth_arr)
 
-def tree_internal_height_lst(t,arr):
-    if(t == None):
+def tree_depth_median(t):
+    """
+    Returns the median of leaf depths in the tree. 
+    """
+    depth_arr = __tree_depth_lst(t,[]) # get array of leaf depths
+    if(depth_arr == []):
+        return 0
+    return statistics.median(depth_arr)
+
+def tree_depth_variance(t):
+    """
+    Returns the variance of leaf depths in the tree. 
+    """
+    depth_arr = __tree_depth_lst(t,[]) # get array of leaf depths
+    if(depth_arr == []):
+        return 0
+    return statistics.variance(depth_arr)
+
+def __tree_internal_height_lst(node,arr):
+    """
+    Returns an array of the reciprocal of the heights (maximum depths) 
+    of subtrees of t rooted at internal nodes of t (not including the root). 
+    Private helper function used for calculating summary stats regarding 
+    tree balance.
+    """
+    if(node == None):
         return []
-    if(not(t.is_leaf()) and not(t.is_root())):
-        arr.append(1/tree_root_dist(t))
-    num_c = len(t.children)  
+    if(not(node.is_leaf()) and not(node.is_root())): # if node is internal (not root or leaf)
+        arr.append(1/tree_height(node)) # add reciprocal of height of subtree rooted at 'node' to 'arr'
+    # must find all internal nodes to add reciprocal of heights to 'arr'
+    num_c = len(node.children)  
     if(num_c == 1): # tree with 1 child
-        tree_internal_height_lst(t.children[0],arr) 
+        __tree_internal_height_lst(node.children[0],arr) 
     elif(num_c == 2): # tree with 2 children
-        tree_internal_height_lst(t.children[0],arr) 
-        tree_internal_height_lst(t.children[1],arr) 
+        __tree_internal_height_lst(node.children[0],arr) 
+        __tree_internal_height_lst(node.children[1],arr) 
     return arr
 
 def tree_balance(t):
-    height_arr = tree_internal_height_lst(t,[])
+    """
+    Returns B1 balance index. This is the sum of the reciprocal of the 
+    heights (maximum depths) of subtrees of t rooted at internal nodes 
+    of t (not including the root).
+    """
+    height_arr = __tree_internal_height_lst(t,[]) # get array of reciprocal subtree heights
     if(height_arr == []):
         return 0
     return sum(height_arr)
