@@ -1,6 +1,7 @@
 from ete3 import Tree
 import random
 import numpy
+import statistics
 
 def gen_sequence(length,off_lim = None):
     seq = ""
@@ -171,18 +172,42 @@ def outputNewick(t,name):
     else:
         print("Empty tree, no output file created.")
 
-def tree_sum(t):
+def tree_branch_lst(t,arr):
+    if(t == None): # empty tree
+        return []
+    arr.append(t.dist)
+    num_c = len(t.children)  
+    if(num_c == 1): # tree with 1 child
+        tree_branch_lst(t.children[0], arr) 
+    elif(num_c == 2): # tree with 2 children
+        tree_branch_lst(t.children[0], arr) 
+        tree_branch_lst(t.children[1], arr) 
+    return arr
+
+def tree_branch_sum(t):
     """
     Returns the sum of the distances of all the branches in the tree. 
     """
-    if(t == None): # empty tree
+    branch_arr = tree_branch_lst(t,[])
+    if(branch_arr == []):
         return 0
-    left_h = 0
-    right_h = 0
-    num_c = len(t.children)  
-    if(num_c == 1): # tree with 1 child
-        left_h = tree_sum(t.children[0]) + t.children[0].dist
-    elif(num_c == 2): # tree with 2 children
-        left_h = tree_sum(t.children[0]) + t.children[0].dist
-        right_h = tree_sum(t.children[1]) + t.children[1].dist
-    return left_h + right_h
+    return sum(branch_arr)
+
+def tree_branch_median(t):
+    branch_arr = tree_branch_lst(t,[])
+    if(branch_arr == []):
+        return 0
+    return statistics.median(branch_arr)
+
+def tree_branch_mean(t):
+    branch_arr = tree_branch_lst(t,[])
+    if(branch_arr == []):
+        return 0
+        statistics.variance
+    return statistics.mean(branch_arr)
+
+def tree_branch_variance(t):
+    branch_arr = tree_branch_lst(t,[])
+    if(branch_arr == []):
+        return 0
+    return statistics.variance(branch_arr)

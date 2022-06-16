@@ -13,7 +13,10 @@ print(t)
 print(growtree.getNewick(t))
 growtree.outputNewick(t,"NWtree")
 print("\nsum: ")
-print(growtree.tree_sum(t))
+print(growtree.tree_branch_sum(t))
+print(growtree.tree_branch_mean(t))
+print(growtree.tree_branch_variance(t))
+
 print("done")
 
 
