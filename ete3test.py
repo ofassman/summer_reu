@@ -16,7 +16,7 @@ print("\nsum: ")
 print(growtree.tree_branch_sum(t))
 print(growtree.tree_branch_mean(t))
 print(growtree.tree_branch_variance(t))
-
+print(growtree.tree_height(t))
+print(growtree.tree_mean_depth(t))
+print(growtree.tree_balance(t))
 print("done")
-
-

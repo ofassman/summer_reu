@@ -130,7 +130,7 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
                 b = gen_rate(b,shape_b)
                 d = gen_rate(d,shape_d)
                 s = gen_rate(s,shape_s)
-                sub_site = random.randint(0, len(seq))
+                sub_site = random.randint(0, len(seq)-1)
                 old_letter = seq[sub_site]
                 sub_letter = gen_sequence(1, off_lim=old_letter)
                 new_seq = ""
@@ -158,7 +158,7 @@ def getNewick(t):
     Returns a tree in Newick tree format.
     """
     if (t != None):
-        return t.write(format=1)
+        return t.write()
     return ";"
 
 def outputNewick(t,name):
@@ -168,7 +168,7 @@ def outputNewick(t,name):
     't' is 'None') no output file is created.
     """
     if (t != None):
-        t.write(format=1, outfile=name + ".nw")
+        t.write(outfile=name + ".nw")
     else:
         print("Empty tree, no output file created.")
 
@@ -203,7 +203,6 @@ def tree_branch_mean(t):
     branch_arr = tree_branch_lst(t,[])
     if(branch_arr == []):
         return 0
-        statistics.variance
     return statistics.mean(branch_arr)
 
 def tree_branch_variance(t):
@@ -211,3 +210,60 @@ def tree_branch_variance(t):
     if(branch_arr == []):
         return 0
     return statistics.variance(branch_arr)
+
+def tree_height(t): # aka max depth
+    if t == None:
+        return 0 
+    left_h = 0
+    right_h = 0
+    num_c = len(t.children)  
+    if(num_c == 1): # tree with 1 child
+        left_h = tree_height(t.children[0]) 
+    elif(num_c == 2): # tree with 2 children
+        left_h = tree_height(t.children[0]) 
+        right_h = tree_height(t.children[1]) 
+    return max(left_h, right_h) + t.dist
+
+def tree_root_dist(t):
+    if t == None or t.up == None:
+        return 0 
+    return tree_root_dist(t.up) + t.dist
+
+def tree_depth_lst(t,arr):
+    if(t == None):
+        return []
+    if(t.is_leaf()):
+        arr.append(tree_root_dist(t))
+    else:
+        num_c = len(t.children)  
+        if(num_c == 1): # tree with 1 child
+            tree_depth_lst(t.children[0],arr) 
+        elif(num_c == 2): # tree with 2 children
+            tree_depth_lst(t.children[0],arr) 
+            tree_depth_lst(t.children[1],arr) 
+    return arr
+
+def tree_mean_depth(t):
+    depth_arr = tree_depth_lst(t,[])
+    if(depth_arr == []):
+        return 0
+    return statistics.mean(depth_arr)
+
+def tree_internal_height_lst(t,arr):
+    if(t == None):
+        return []
+    if(not(t.is_leaf()) and not(t.is_root())):
+        arr.append(1/tree_root_dist(t))
+    num_c = len(t.children)  
+    if(num_c == 1): # tree with 1 child
+        tree_internal_height_lst(t.children[0],arr) 
+    elif(num_c == 2): # tree with 2 children
+        tree_internal_height_lst(t.children[0],arr) 
+        tree_internal_height_lst(t.children[1],arr) 
+    return arr
+
+def tree_balance(t):
+    height_arr = tree_internal_height_lst(t,[])
+    if(height_arr == []):
+        return 0
+    return sum(height_arr)
