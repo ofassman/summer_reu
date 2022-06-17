@@ -336,3 +336,81 @@ def tree_balance(t):
     if(height_arr == []):
         return 0
     return sum(height_arr)
+
+def tree_nleaf(node):
+    if(node == None): # empty tree
+        return 0
+    if(node.is_leaf()): # node is leaf so increment
+        return 1
+    num_leaves = 0
+    num_c = len(node.children)  
+    if(num_c == 1): # tree with 1 child
+        num_leaves = tree_nleaf(node.children[0]) 
+    elif(num_c == 2): # tree with 2 children
+        num_leaves = tree_nleaf(node.children[0]) + tree_nleaf(node.children[1]) 
+    return num_leaves
+
+def __tree_leaf_diff(node):
+    if(node == None):
+        return 0
+    if(not(node.is_leaf())):
+        nleaf_l = 0
+        nleaf_r = 0
+        num_c = len(node.children)  
+        if(num_c == 1): # tree with 1 child
+            nleaf_l = tree_nleaf(node.children[0]) 
+        elif(num_c == 2): # tree with 2 children
+            nleaf_l = tree_nleaf(node.children[0]) 
+            nleaf_r = tree_nleaf(node.children[1])
+        return abs(nleaf_l - nleaf_r)
+    return 0
+
+def __tree_leaf_diff_lst(node,arr):
+    if(node == None):
+        return []
+    if(not(node.is_leaf())):
+        arr.append(__tree_leaf_diff(node))
+    num_c = len(node.children)  
+    if(num_c == 1): # tree with 1 child
+        __tree_leaf_diff_lst(node.children[0],arr) 
+    elif(num_c == 2): # tree with 2 children
+        __tree_leaf_diff_lst(node.children[0],arr) 
+        __tree_leaf_diff_lst(node.children[1],arr) 
+    return arr
+
+def tree_root_colless(t):
+    if(t == None):
+        return 0
+    return __tree_leaf_diff(t)
+
+def tree_sum_colless(t):
+    if(t == None):
+        return []
+    arr = __tree_leaf_diff_lst(t,[])
+    if(arr == []):
+        return 0
+    return sum(arr)
+
+def tree_mean_colless(t):
+    if(t == None):
+        return []
+    arr = __tree_leaf_diff_lst(t,[])
+    if(arr == []):
+        return 0
+    return statistics.mean(arr)
+
+def tree_median_colless(t):
+    if(t == None):
+        return []
+    arr = __tree_leaf_diff_lst(t,[])
+    if(arr == []):
+        return 0
+    return statistics.median(arr)
+
+def tree_variance_colless(t):
+    if(t == None):
+        return []
+    arr = __tree_leaf_diff_lst(t,[])
+    if(arr == []):
+        return 0
+    return statistics.variance(arr)

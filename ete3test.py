@@ -12,5 +12,5 @@ t = growtree.gen_tree(0.5,0.3,0.5,20,1,1,1,0,100)
 print(t)
 print(growtree.getNewick(t))
 growtree.outputNewick(t,"NWtree")
-
+print(growtree.tree_sum_colless(t))
 print("done")
