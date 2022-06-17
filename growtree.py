@@ -337,25 +337,34 @@ def tree_balance(t):
         return 0
     return sum(height_arr)
 
-def tree_nleaf(node):
-    if(node == None): # empty tree
+def tree_nleaf(t):
+    """
+    Returns number of leaves in a tree.
+    """
+    if(t == None): # empty tree
         return 0
-    if(node.is_leaf()): # node is leaf so increment
+    if(t.is_leaf()): # node is leaf so increment
         return 1
     num_leaves = 0
-    num_c = len(node.children)  
+    num_c = len(t.children)  
     if(num_c == 1): # tree with 1 child
-        num_leaves = tree_nleaf(node.children[0]) 
+        num_leaves = tree_nleaf(t.children[0]) 
     elif(num_c == 2): # tree with 2 children
-        num_leaves = tree_nleaf(node.children[0]) + tree_nleaf(node.children[1]) 
+        num_leaves = tree_nleaf(t.children[0]) + tree_nleaf(t.children[1]) # add leaves of both children
     return num_leaves
 
 def __tree_leaf_diff(node):
+    """
+    Returns the absolute value of the difference between the number of leaves
+    on the left side of the tree and the number of leaves on the right side.
+    Private helper function used for calculating summary stats regarding the
+    colless index.
+    """
     if(node == None):
         return 0
     if(not(node.is_leaf())):
-        nleaf_l = 0
-        nleaf_r = 0
+        nleaf_l = 0 # will hold number of leaves on left side of 'node'
+        nleaf_r = 0 # will hold number of leaves on right side of 'node'
         num_c = len(node.children)  
         if(num_c == 1): # tree with 1 child
             nleaf_l = tree_nleaf(node.children[0]) 
@@ -366,10 +375,16 @@ def __tree_leaf_diff(node):
     return 0
 
 def __tree_leaf_diff_lst(node,arr):
+    """
+    Returns an array of absolute values of the differences between the number 
+    of leaves on the left side of a node and the number of leaves on the right 
+    side for all internal nodes including the root. Private helper function 
+    used for calculating summary stats regarding the colless index.
+    """
     if(node == None):
         return []
-    if(not(node.is_leaf())):
-        arr.append(__tree_leaf_diff(node))
+    if(not(node.is_leaf())): # node is internal (not a leaf)
+        arr.append(__tree_leaf_diff(node)) # add leaf difference to array
     num_c = len(node.children)  
     if(num_c == 1): # tree with 1 child
         __tree_leaf_diff_lst(node.children[0],arr) 
@@ -379,38 +394,56 @@ def __tree_leaf_diff_lst(node,arr):
     return arr
 
 def tree_root_colless(t):
+    """
+    Returns the colless index for the root node of a tree. That is,
+    returns the absolute value of the difference between the number of leaves
+    on the left side of the tree and the number of leaves on the right side
+    for the root node.
+    """
     if(t == None):
         return 0
     return __tree_leaf_diff(t)
 
 def tree_sum_colless(t):
+    """
+    Returns the sum of the colless indices for every internal node of a tree. 
+    """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[])
+    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
     if(arr == []):
         return 0
     return sum(arr)
 
 def tree_mean_colless(t):
+    """
+    Returns the mean of the colless indices for every internal node of a tree. 
+    """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[])
+    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
     if(arr == []):
         return 0
     return statistics.mean(arr)
 
 def tree_median_colless(t):
+    """
+    Returns the median of the colless indices for every internal node of a tree. 
+    """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[])
+    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
     if(arr == []):
         return 0
     return statistics.median(arr)
 
 def tree_variance_colless(t):
+    """
+    Returns the variance of the colless indices for every internal node of a tree. 
+    """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[])
+    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
     if(arr == []):
         return 0
     return statistics.variance(arr)
