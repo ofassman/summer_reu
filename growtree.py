@@ -3,6 +3,9 @@ import random
 import numpy
 import statistics
 
+__seq_dict = {} # A global dictionary with 'sequence number : sequence' pairs. Populated by 'growtree()'.
+__seq_counter = 0 # A global counter for sequence number. Each cell has a unique number. Incremented by 'growtree()'.
+
 def gen_sequence(length,off_lim = None):
     """
     Randomly generates a 'length' long genetic sequence of bases. 'off_lim' is by default 'None', but can be used
@@ -83,12 +86,16 @@ def gen_rate(mean,shape):
 
 def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
     """
-    Returns a birth-death tree. Used as a helper function for 'gen_tree()' that produces the birth-death tree.
+    Returns a birth-death tree. Used as a recursive helper function for 'gen_tree()' that produces
+    the birth-death tree. Populates '__seq_dict' with 'sequence number : sequence' pairs. 
     """
+    global __seq_counter # declaring global counter for sequence number in '__seq_dict'
     rng = random.Random()
     # initializing the tree and branch length
     t = Tree()
-    t.name = seq
+    key = "SEQUENCE_" + str(__seq_counter) # create sequence number key using the global counter
+    t.name = key
+    __seq_dict[key] = seq # set the 'sequence number : sequence' pair in the '__seq_dict' dictionary
     t.dist = 0
     while(True):
         # finding the wait time to any event (b, d, or s) based on rates
@@ -110,7 +117,9 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
             event = gen_event(b_weighted, d_weighted, s_weighted) # generate event based on weighted rates
             if(event == "birth"): # recursively call fn for children, same rates but different max_time
                 # max_time for children should be the time remaining (max_time - curr_time) divided by 2 (since 2 children)
+                __seq_counter += 1 # increment global counter so that each child has a unique sequence number
                 c1 = growtree(seq,b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)
+                __seq_counter += 1 # increment global counter so that each child has a unique sequence number
                 c2 = growtree(seq,b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)  
                 if(c1 == None and c2 == None): # both children are extinct so lineage is extinct (return None)
                     return None
@@ -122,19 +131,22 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
                 return t
             elif(event == "sub"): # change current rates based on sampling from a gamma distribution and continue to next event
                 # mean of gamma distribution is current rate
-                b = gen_rate(b,shape_b)
-                d = gen_rate(d,shape_d)
-                s = gen_rate(s,shape_s)
-                sub_site = random.randint(0, len(seq)-1)
-                old_letter = seq[sub_site]
-                sub_letter = gen_sequence(1, off_lim=old_letter)
+                b = gen_rate(b,shape_b) # generate new birth rate
+                d = gen_rate(d,shape_d) # generate new death rate
+                s = gen_rate(s,shape_s) # generate new sub rate
+                sub_site = random.randint(0, len(seq)-1) # randomly pick a site to sub a base in the sequence
+                old_letter = seq[sub_site] # find old base at this site so that the sub does not change the site to the same base
+                sub_letter = gen_sequence(1, off_lim=old_letter) # generate a new base for this site that is not the old base (not 'old_letter')
+                # generate the new sequence using the old sequence with one base changed from 'old_letter' to 'new_letter'
+                # at index 'sub_site' in the sequence
                 new_seq = ""
                 for i in range(0, sub_site, 1):
                     new_seq += seq[i : i + 1]
                 new_seq += sub_letter
                 for j in range(sub_site + 1, len(seq), 1):
                     new_seq += seq[j : j + 1]
-                seq = new_seq
+                seq = new_seq # update sequence to newly mutated sequence
+                __seq_dict[key] = seq # update the 'sequence number : sequence' pair in the '__seq_dict' dictionary
                 # if branch length is a variable of number of substitutions, increase lineage's branch length by 1
                 if(branch_info == 1):
                     t.dist += 1
@@ -158,9 +170,11 @@ def gen_tree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info,seq_length):
     gamma distributions from which each rate is sampled from upon a substitution. 'seq_length' specifies the 
     length of the genetic sequence for the cells (the root will have a randomly generated sequence of length 
     'seq_length' and subsequent lineages will carry on this sequence, with modifications upon a substitution).
+    Translations from sequence number to sequence can be found in '__seq_dict' (a dictionary populated with
+    'sequence number : sequence' pairs).
     """
     seq = gen_sequence(seq_length) # generate random genetic sequence for root cell 
-    t = growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info)
+    t = growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info) # generate the tree with a recursive function
     return t
 
 def getNewick(t):
@@ -181,6 +195,42 @@ def outputNewick(t,name):
         t.write(outfile=name + ".nw")
     else:
         print("Empty tree, no output file created.")
+
+def get_seq(seq_num = None):
+    """
+    Returns a genetic sequence for a cell in the simulated phylogeny (simulated using 'gen_tree'). 
+    If 'seq_num' is None (which is the defualt), the whole 'sequence number : sequence' dictionary
+    is returned. Otherwise, 'seq_num' can be initialized to an integer argument for the specific
+    sequence corresponding to that sequence number to be returned.
+    """
+    if(seq_num == None): # 'seq_num' is not initialized so return whole dictionary
+        return __seq_dict
+    else:
+        key = "SEQUENCE_" + str(seq_num) # find the specific key corresponding to 'seq_num'
+        value = __seq_dict.get(key) # find the sequence in the dictionary corresponding to the key
+        if(value == None): # no sequence exists corresponding to 'key'
+            print(key, "does not exist.")
+            return None
+        return value # return this specific sequence
+
+def print_seq(seq_num = None):
+    """
+    Prints a genetic sequence for a cell in the simulated phylogeny (simulated using 'gen_tree'). 
+    If 'seq_num' is None (which is the defualt), the whole 'sequence number : sequence' dictionary
+    is printed in FASTA format. Otherwise, 'seq_num' can be initialized to an integer argument 
+    for the specific sequence corresponding to that sequence number to be printed in FASTA format
+    (i.e. the single 'sequence number : sequence' pair is printed).
+    """
+    if(seq_num == None): # 'seq_num' is not initialized so print whole dictionary in FASTA format
+        for key, value in __seq_dict.items():
+            print('>', key, '\n', value)
+    else:
+        key = "SEQUENCE_" + str(seq_num) # find the specific key corresponding to 'seq_num'
+        value = __seq_dict.get(key) # find the sequence in the dictionary corresponding to the key
+        if(value == None): # no sequence exists corresponding to 'key'
+            print(key, "does not exist.")
+        else:
+            print('>', key, '\n', value) # print this 'key' : 'value' pair in FASTA format
 
 #################### TREE STATISTICS ########################################
 
