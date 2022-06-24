@@ -5,15 +5,15 @@ import scipy.stats as ss
 import numpy as np
 import scipy
 
-def gen_tree_sims(b=1, d=1, batch_size=1, random_state=None):
+def gen_tree_sims(b, d, batch_size=1,random_state=None):
     arr = []
     random_state = random_state or np.random
-    for i in range(0, batch_size):
-        arr.append(growtree.gen_tree(b,d,1,100,1,1,1,0,100))
+    # should there be a loop here thatcalls gen_tree batch_size times?
+    arr.append(growtree.gen_tree(b,d,1,100,1,1,1,0,100))
     return arr
 
 def treestat(tree):
-    return growtree.tree_height(tree[0])
+    return growtree.tree_height(tree)
 
 # true parameters
 birth_true = 1.3
@@ -23,7 +23,7 @@ sub_true = 1
 birth = elfi.Prior(scipy.stats.uniform, 0, 5)
 death = elfi.Prior(scipy.stats.uniform, 0, 5)
 
-obs = (gen_tree_sims(birth_true, death_true, sub_true))[0]
+obs = (gen_tree_sims(birth_true, death_true))[0]
 Y = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims),birth,death,observed=obs)
 
 S1 = elfi.Summary(treestat, Y)
