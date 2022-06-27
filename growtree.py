@@ -294,6 +294,7 @@ def tree_height(t):
         return 0 
     left_h = 0
     right_h = 0
+    #print(t)
     num_c = len(t.children)  
     if(num_c == 1): # tree with 1 child
         left_h = tree_height(t.children[0]) 
