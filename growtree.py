@@ -6,7 +6,7 @@ import statistics
 __seq_dict = {} # A global dictionary with 'sequence number : sequence' pairs. Populated by 'growtree()'.
 __seq_counter = 0 # A global counter for sequence number. Each cell has a unique number. Incremented by 'growtree()'.
 
-def gen_sequence(length,off_lim = None):
+def gen_sequence(length, off_lim = None):
     """
     Randomly generates a 'length' long genetic sequence of bases. 'off_lim' is by default 'None', but can be used
     to specify a base that is not allowed to appear in the sequence (e.g. upon a substitution, the base that was 
@@ -60,7 +60,7 @@ def gen_sequence(length,off_lim = None):
                 seq += "G"
     return seq
 
-def gen_event(b,d,s):
+def gen_event(b, d, s):
     """
     Randomly generates an event based on weighted birth, death, and substitution rates.
     """
@@ -77,14 +77,14 @@ def gen_event(b,d,s):
         return "death"
     return "sub"
     
-def gen_rate(mean,shape):
+def gen_rate(mean, shape):
     """
     Samples a new rate based on a gamma distribution given the mean rate and the shape of the distribution. 
     """
-    scale_calc = mean/shape
-    return numpy.random.gamma(shape, scale=scale_calc, size=None)
+    scale_calc = mean / shape
+    return numpy.random.gamma(shape, scale = scale_calc, size = None)
 
-def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
+def growtree(seq, b, d, s, max_time, shape_b, shape_d, shape_s, branch_info):
     """
     Returns a birth-death tree. Used as a recursive helper function for 'gen_tree()' that produces
     the birth-death tree. Populates '__seq_dict' with 'sequence number : sequence' pairs. 
@@ -111,16 +111,16 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
             if(branch_info == 2): 
                 t.dist += s * wait_t 
             # calculating weighted rates
-            b_weighted = b/rate_any_event
-            d_weighted = d/rate_any_event
-            s_weighted = s/rate_any_event
+            b_weighted = b / rate_any_event
+            d_weighted = d / rate_any_event
+            s_weighted = s / rate_any_event
             event = gen_event(b_weighted, d_weighted, s_weighted) # generate event based on weighted rates
             if(event == "birth"): # recursively call fn for children, same rates but different max_time
                 # max_time for children should be the time remaining (max_time - curr_time) divided by 2 (since 2 children)
                 __seq_counter += 1 # increment global counter so that each child has a unique sequence number
-                c1 = growtree(seq,b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)
+                c1 = growtree(seq, b, d, s, (max_time - curr_t) / 2, shape_b, shape_d, shape_s, branch_info)
                 __seq_counter += 1 # increment global counter so that each child has a unique sequence number
-                c2 = growtree(seq,b,d,s,(max_time-curr_t)/2,shape_b,shape_d,shape_s,branch_info)  
+                c2 = growtree(seq, b, d, s, (max_time-curr_t)/2, shape_b, shape_d, shape_s, branch_info)  
                 if(c1 == None and c2 == None): # both children are extinct so lineage is extinct (return None)
                     return None
                 # children are only concatenated onto the parent tree if they are extant (non-None)
@@ -131,12 +131,12 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
                 return t
             elif(event == "sub"): # change current rates based on sampling from a gamma distribution and continue to next event
                 # mean of gamma distribution is current rate
-                b = gen_rate(b,shape_b) # generate new birth rate
-                d = gen_rate(d,shape_d) # generate new death rate
-                s = gen_rate(s,shape_s) # generate new sub rate
-                sub_site = random.randint(0, len(seq)-1) # randomly pick a site to sub a base in the sequence
+                b = gen_rate(b, shape_b) # generate new birth rate
+                d = gen_rate(d, shape_d) # generate new death rate
+                s = gen_rate(s, shape_s) # generate new sub rate
+                sub_site = random.randint(0, len(seq) - 1) # randomly pick a site to sub a base in the sequence
                 old_letter = seq[sub_site] # find old base at this site so that the sub does not change the site to the same base
-                sub_letter = gen_sequence(1, off_lim=old_letter) # generate a new base for this site that is not the old base (not 'old_letter')
+                sub_letter = gen_sequence(1, off_lim = old_letter) # generate a new base for this site that is not the old base (not 'old_letter')
                 # generate the new sequence using the old sequence with one base changed from 'old_letter' to 'new_letter'
                 # at index 'sub_site' in the sequence
                 new_seq = ""
@@ -155,7 +155,7 @@ def growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info):
         else: # wait time exceeded max_time so return tree (lineage ends from timeout)
             return t
 
-def gen_tree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info,seq_length):
+def gen_tree(b, d, s, max_time, shape_b, shape_d, shape_s, branch_info, seq_length):
     """
     Returns a birth-death tree. All rates (birth, death, and substitution) may change upon a substitution.
     'b', 'd', and 's' are the initial values of the birth, death, and substitution rates (respectively).
@@ -174,7 +174,7 @@ def gen_tree(b,d,s,max_time,shape_b,shape_d,shape_s,branch_info,seq_length):
     'sequence number : sequence' pairs).
     """
     seq = gen_sequence(seq_length) # generate random genetic sequence for root cell 
-    t = growtree(seq,b,d,s,max_time,shape_b,shape_d,shape_s,branch_info) # generate the tree with a recursive function
+    t = growtree(seq, b, d, s, max_time, shape_b, shape_d, shape_s, branch_info) # generate the tree with a recursive function
     return t
 
 def getNewick(t):
@@ -185,14 +185,14 @@ def getNewick(t):
         return t.write()
     return ";"
 
-def outputNewick(t,name):
+def outputNewick(t, name):
     """
     Writes a tree, 't', in Newick tree format into a file. 'name' specifies the 
     file's name in which the tree is written into. If the tree is empty (i.e. if 
     't' is 'None') no output file is created.
     """
     if (t != None):
-        t.write(outfile=name + ".nw")
+        t.write(outfile = name + ".nw")
     else:
         print("Empty tree, no output file created.")
 
@@ -234,7 +234,7 @@ def print_seq(seq_num = None):
 
 #################### TREE STATISTICS ########################################
 
-def __tree_branch_lst(t,arr):
+def __tree_branch_lst(t, arr):
     """
     Returns an array of branch lengths. Private helper function used for calculating summary
     stats regarding branches.
@@ -254,7 +254,7 @@ def tree_branch_sum(t):
     """
     Returns the sum of the distances of all the branches in the tree. 
     """
-    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
+    branch_arr = __tree_branch_lst(t, []) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return sum(branch_arr)
@@ -263,7 +263,7 @@ def tree_branch_mean(t):
     """
     Returns the mean of the distances of all the branches in the tree. 
     """
-    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
+    branch_arr = __tree_branch_lst(t,[ ]) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return statistics.mean(branch_arr)
@@ -272,7 +272,7 @@ def tree_branch_median(t):
     """
     Returns the median of the distances of all the branches in the tree. 
     """
-    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
+    branch_arr = __tree_branch_lst(t, []) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return statistics.median(branch_arr)
@@ -281,7 +281,7 @@ def tree_branch_variance(t):
     """
     Returns the variance of the distances of all the branches in the tree. 
     """
-    branch_arr = __tree_branch_lst(t,[]) # get array of branch lengths
+    branch_arr = __tree_branch_lst(t, []) # get array of branch lengths
     if(branch_arr == []):
         return 0
     return statistics.variance(branch_arr)
@@ -312,7 +312,7 @@ def __tree_root_dist(node):
         return 0 
     return __tree_root_dist(node.up) + node.dist
 
-def __tree_depth_lst(node,arr):
+def __tree_depth_lst(node, arr):
     """
     Returns an array of leaf depths. Private helper function used for calculating summary
     stats regarding tree depth.
@@ -324,17 +324,17 @@ def __tree_depth_lst(node,arr):
     else: # node is not leaf so recurse to find leaves
         num_c = len(node.children)  
         if(num_c == 1): # tree with 1 child
-            __tree_depth_lst(node.children[0],arr) 
+            __tree_depth_lst(node.children[0], arr) 
         elif(num_c == 2): # tree with 2 children
-            __tree_depth_lst(node.children[0],arr) 
-            __tree_depth_lst(node.children[1],arr) 
+            __tree_depth_lst(node.children[0], arr) 
+            __tree_depth_lst(node.children[1], arr) 
     return arr
 
 def tree_depth_mean(t):
     """
     Returns the mean of leaf depths in the tree. 
     """
-    depth_arr = __tree_depth_lst(t,[]) # get array of leaf depths
+    depth_arr = __tree_depth_lst(t, []) # get array of leaf depths
     if(depth_arr == []):
         return 0
     return statistics.mean(depth_arr)
@@ -343,7 +343,7 @@ def tree_depth_median(t):
     """
     Returns the median of leaf depths in the tree. 
     """
-    depth_arr = __tree_depth_lst(t,[]) # get array of leaf depths
+    depth_arr = __tree_depth_lst(t, []) # get array of leaf depths
     if(depth_arr == []):
         return 0
     return statistics.median(depth_arr)
@@ -352,12 +352,12 @@ def tree_depth_variance(t):
     """
     Returns the variance of leaf depths in the tree. 
     """
-    depth_arr = __tree_depth_lst(t,[]) # get array of leaf depths
+    depth_arr = __tree_depth_lst(t, []) # get array of leaf depths
     if(depth_arr == []):
         return 0
     return statistics.variance(depth_arr)
 
-def __tree_internal_height_lst(node,arr):
+def __tree_internal_height_lst(node, arr):
     """
     Returns an array of the reciprocal of the heights (maximum depths) 
     of subtrees of t rooted at internal nodes of t (not including the root). 
@@ -371,10 +371,10 @@ def __tree_internal_height_lst(node,arr):
     # must find all internal nodes to add reciprocal of heights to 'arr'
     num_c = len(node.children)  
     if(num_c == 1): # tree with 1 child
-        __tree_internal_height_lst(node.children[0],arr) 
+        __tree_internal_height_lst(node.children[0], arr) 
     elif(num_c == 2): # tree with 2 children
-        __tree_internal_height_lst(node.children[0],arr) 
-        __tree_internal_height_lst(node.children[1],arr) 
+        __tree_internal_height_lst(node.children[0], arr) 
+        __tree_internal_height_lst(node.children[1], arr) 
     return arr
 
 def tree_balance(t):
@@ -383,7 +383,7 @@ def tree_balance(t):
     heights (maximum depths) of subtrees of t rooted at internal nodes 
     of t (not including the root).
     """
-    height_arr = __tree_internal_height_lst(t,[]) # get array of reciprocal subtree heights
+    height_arr = __tree_internal_height_lst(t, []) # get array of reciprocal subtree heights
     if(height_arr == []):
         return 0
     return sum(height_arr)
@@ -425,7 +425,7 @@ def __tree_leaf_diff(node):
         return abs(nleaf_l - nleaf_r)
     return 0
 
-def __tree_leaf_diff_lst(node,arr):
+def __tree_leaf_diff_lst(node, arr):
     """
     Returns an array of absolute values of the differences between the number 
     of leaves on the left side of a node and the number of leaves on the right 
@@ -438,10 +438,10 @@ def __tree_leaf_diff_lst(node,arr):
         arr.append(__tree_leaf_diff(node)) # add leaf difference to array
     num_c = len(node.children)  
     if(num_c == 1): # tree with 1 child
-        __tree_leaf_diff_lst(node.children[0],arr) 
+        __tree_leaf_diff_lst(node.children[0], arr) 
     elif(num_c == 2): # tree with 2 children
-        __tree_leaf_diff_lst(node.children[0],arr) 
-        __tree_leaf_diff_lst(node.children[1],arr) 
+        __tree_leaf_diff_lst(node.children[0], arr) 
+        __tree_leaf_diff_lst(node.children[1], arr) 
     return arr
 
 def tree_root_colless(t):
@@ -461,7 +461,7 @@ def tree_sum_colless(t):
     """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
+    arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
     return sum(arr)
@@ -472,7 +472,7 @@ def tree_mean_colless(t):
     """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
+    arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
     return statistics.mean(arr)
@@ -483,7 +483,7 @@ def tree_median_colless(t):
     """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
+    arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
     return statistics.median(arr)
@@ -494,7 +494,7 @@ def tree_variance_colless(t):
     """
     if(t == None):
         return []
-    arr = __tree_leaf_diff_lst(t,[]) # get array of colless indices
+    arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
     return statistics.variance(arr)
