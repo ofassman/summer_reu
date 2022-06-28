@@ -460,7 +460,7 @@ def tree_sum_colless(t):
     Returns the sum of the colless indices for every internal node of a tree. 
     """
     if(t == None):
-        return []
+        return 0
     arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
@@ -471,7 +471,7 @@ def tree_mean_colless(t):
     Returns the mean of the colless indices for every internal node of a tree. 
     """
     if(t == None):
-        return []
+        return 0
     arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
@@ -482,7 +482,7 @@ def tree_median_colless(t):
     Returns the median of the colless indices for every internal node of a tree. 
     """
     if(t == None):
-        return []
+        return 0
     arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0
@@ -493,7 +493,7 @@ def tree_variance_colless(t):
     Returns the variance of the colless indices for every internal node of a tree. 
     """
     if(t == None):
-        return []
+        return 0
     arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
     if(arr == []):
         return 0

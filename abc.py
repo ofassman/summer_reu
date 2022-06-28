@@ -1,3 +1,4 @@
+from shutil import register_archive_format
 import elfi
 import growtree
 import numpy as np
@@ -31,6 +32,38 @@ def tree_height_stat(tree_arr):
             break
     return res_arr # return array of heights
 
+
+
+def tree_branch_mean_stat(tree_arr):
+    """
+    Returns the array of tree heights of the trees in 'tree_arr'. 
+    """
+    res_arr = [] # array that will hold the tree heights of the trees in 'tree_arr'
+    for i in tree_arr: # for each tree in 'tree_arr'
+        if(type(i) != ete3.coretype.tree.TreeNode): # if 'tree_arr' is an array of simulated trees
+            res_arr.append(growtree.tree_branch_mean(i[0])) # calculate height of current tree, 'i'
+        else: # 'tree_arr' is a one element array containing only the observed tree ('obs')
+            res_arr.append(growtree.tree_branch_mean(i.get_tree_root())) # calculate the height of 'obs'
+            break
+    return res_arr # return array of heights
+
+def tree_colless_stat(tree_arr):
+    """
+    Returns the array of tree heights of the trees in 'tree_arr'. 
+    """
+    res_arr = [] # array that will hold the tree heights of the trees in 'tree_arr'
+    for i in tree_arr: # for each tree in 'tree_arr'
+        if(type(i) != ete3.coretype.tree.TreeNode): # if 'tree_arr' is an array of simulated trees
+            res_arr.append(growtree.tree_mean_colless(i[0])) # calculate height of current tree, 'i'
+        else: # 'tree_arr' is a one element array containing only the observed tree ('obs')
+            res_arr.append(growtree.tree_mean_colless(i.get_tree_root())) # calculate the height of 'obs'
+            break
+    return res_arr # return array of heights
+
+
+
+
+
 """
 True parameters for birth and death rates (to be estimated by ABC).
 """
@@ -52,16 +85,31 @@ parameters ('birth' and 'death'), and the obeserved tree ('obs') passed to it as
 sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), birth, death, observed = obs) 
 
 """
-'sum_stat_height' is a summary node with the 'tree_height_stat()' function and the 
+'summ_stat_height' is a summary node with the 'tree_height_stat()' function and the 
 simulated trees (includes the observed tree).
 """
-sum_stat_height = elfi.Summary(tree_height_stat, sim) 
+summ_stat_height = elfi.Summary(tree_height_stat, sim) 
+
+
+
+
+
+
+
+summ_stat_branch_mean = elfi.Summary(tree_branch_mean_stat, sim) 
+summ_stat_colless_mean = elfi.Summary(tree_colless_stat, sim) 
+
+
+
+
+
+
 
 """
 'dist' is a distance node that calculates the euclidian (squared distance): 
 ('sum_stat_height_sim' - 'sum_stat_height_obs') * 2
 """
-dist = elfi.Distance('euclidean', sum_stat_height)
+dist = elfi.Distance('euclidean', summ_stat_branch_mean, summ_stat_colless_mean)
 
 """
 'rej' is a rejection node used in inference with rejection sampling
@@ -70,7 +118,7 @@ simulations are performed in computation of 'dist'.
 """
 rej = elfi.Rejection(dist, batch_size = 1000)
 
-N = 50 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 1000 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -78,8 +126,8 @@ from rates drawn from the priors that have a generated distance below 'thresh'
 will be accepted as samples. The simulator will generate as many trees as it 
 takes to accept the specified number of trees ('N' trees).
 """
-thresh = 0.5 # distance threshold
-result_thresh = rej.sample(N, threshold = thresh)
+thresh = 0.001 # distance threshold
+#result_thresh = rej.sample(N, threshold = thresh)
 
 """
 Below is rejection using quantiles. The quantile of trees size 'quantile' 
@@ -88,4 +136,4 @@ generate ('N' / 'quantile') trees and accept 'N' of them.
 """
 result_quant = rej.sample(N, quantile = 0.01)
 
-result_thresh.summary() # summary statistics from the inference with rejection sampling
+result_quant.summary() # summary statistics from the inference with rejection sampling
