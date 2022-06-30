@@ -167,20 +167,22 @@ from rates drawn from the priors that have a generated distance below 'thresh'
 will be accepted as samples. The simulator will generate as many trees as it 
 takes to accept the specified number of trees ('N' trees).
 """
-thresh = 0.5 # distance threshold
-result_thresh = rej.sample(N, threshold = thresh) # COMMENT OUT THIS LINE IF QUANTILE METHOD IS USED
+# COMMENT OUT BLOCK BELOW IF QUANTILE METHOD IS USED
+# thresh = 0.5 # distance threshold
+# result_thresh = rej.sample(N, threshold = thresh) 
 
-result_thresh.summary() # summary statistics from the inference with rejection sampling
-result_thresh.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
-plt.show()
+# result_thresh.summary() # summary statistics from the inference with rejection sampling
+# result_thresh.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+# plt.show()
 
 """
 Below is rejection using quantiles. The quantile of trees size 'quant' 
 with the smallest generated distances are accepted. The simulator will 
 generate ('N' / 'quant') trees and accept 'N' of them.
 """
+# COMMENT OUT BLOCK BELOW IF THRESHOLD METHOD IS USED
 quant = 0.1 # quantile of accepted trees
-result_quant = rej.sample(N, quantile = quant) # COMMENT OUT THIS LINE IF THRESHOLD METHOD IS USED
+result_quant = rej.sample(N, quantile = quant) 
 
 result_quant.summary() # summary statistics from the inference with rejection sampling
 result_quant.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
