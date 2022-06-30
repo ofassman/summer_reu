@@ -282,7 +282,7 @@ def tree_branch_variance(t):
     Returns the variance of the distances of all the branches in the tree. 
     """
     branch_arr = __tree_branch_lst(t, []) # get array of branch lengths
-    if(branch_arr == []):
+    if(branch_arr == [] or len(branch_arr) < 2):
         return 0
     return statistics.variance(branch_arr)
 
@@ -353,7 +353,7 @@ def tree_depth_variance(t):
     Returns the variance of leaf depths in the tree. 
     """
     depth_arr = __tree_depth_lst(t, []) # get array of leaf depths
-    if(depth_arr == []):
+    if(depth_arr == [] or len(depth_arr) < 2):
         return 0
     return statistics.variance(depth_arr)
 
@@ -495,6 +495,6 @@ def tree_variance_colless(t):
     if(t == None):
         return 0
     arr = __tree_leaf_diff_lst(t, []) # get array of colless indices
-    if(arr == []):
+    if(arr == [] or len(arr) < 2):
         return 0
     return statistics.variance(arr)
