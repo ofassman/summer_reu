@@ -89,14 +89,14 @@ def variance_colless_stat(tree_arr):
 """
 True parameters for birth and death rates (to be estimated by ABC).
 """
-birth_true = .8
-death_true = .5
+birth_true = .5
+death_true = 10
 
 """
 Prior distributions of rate parameters (uniform distributions).
 """
-birth = elfi.Prior(scipy.stats.uniform, 0, 1)
-death = elfi.Prior(scipy.stats.uniform, 0, 1)
+birth = elfi.Prior(scipy.stats.uniform, 0, 10)
+death = elfi.Prior(scipy.stats.uniform, 0, 10)
 
 obs = (gen_tree_sims(birth_true, death_true))[0] # observed tree (tree simulated with true rate parameters)
 
@@ -152,14 +152,17 @@ dist_mm = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_
     summ_depth_mean, summ_depth_median, summ_balance, summ_nleaves, summ_colless_mean, 
     summ_colless_median)
 
+d_type = summ_colless_variance
+dist = elfi.Distance('euclidean', d_type)
+
 """
 'rej' is a rejection node used in inference with rejection sampling
 using 'dist' values in order to reject. 'batch_size' defines how many 
 simulations are performed in computation of 'dist'.
 """
-rej = elfi.Rejection(dist_mm, batch_size = 1000)
+rej = elfi.Rejection(dist, batch_size = 1000)
 
-N = 200 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 10 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -184,7 +187,13 @@ generate ('N' / 'quant') trees and accept 'N' of them.
 quant = 0.1 # quantile of accepted trees
 result_quant = rej.sample(N, quantile = quant) 
 
+print(d_type)
+print("death: " + str(death_true))
+
 result_quant.summary() # summary statistics from the inference with rejection sampling
+
+print("-------")
+
 result_quant.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
 plt.show()
 
