@@ -89,8 +89,8 @@ def variance_colless_stat(tree_arr):
 """
 True parameters for birth and death rates (to be estimated by ABC).
 """
-birth_true = 3
-death_true = 5
+birth_true = 6
+death_true = 2
 
 """
 Prior distributions of rate parameters (uniform distributions).
@@ -204,7 +204,8 @@ takes to accept the specified number of trees ('N' trees).
 # result_thresh = rej.sample(N, threshold = thresh) 
 
 # result_thresh.summary() # summary statistics from the inference with rejection sampling
-# result_thresh.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+# # result_thresh.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+# result_thresh.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
 # plt.show()
 
 """
@@ -217,7 +218,8 @@ quant = 0.1 # quantile of accepted trees
 result_quant = rej.sample(N, quantile = quant) 
 
 result_quant.summary() # summary statistics from the inference with rejection sampling
-result_quant.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+# result_quant.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+result_quant.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
 plt.show()
 
 """
@@ -227,3 +229,7 @@ will needlessly increase the runtime of the program. (If both types are used,
 the entire inference with rejection sampling process will occur twice.) 
 For efficiency, choose one type of sampling per excecution of the file.
 """
+
+# Display the true rates below to compare to the inferred rates
+print("true birth rate: " + str(birth_true))
+print("true death rate: " + str(death_true))
