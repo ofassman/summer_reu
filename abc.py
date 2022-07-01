@@ -89,8 +89,8 @@ def variance_colless_stat(tree_arr):
 """
 True parameters for birth and death rates (to be estimated by ABC).
 """
-birth_true = .5
-death_true = 10
+birth_true = 3
+death_true = 5
 
 """
 Prior distributions of rate parameters (uniform distributions).
@@ -152,8 +152,37 @@ dist_mm = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_
     summ_depth_mean, summ_depth_median, summ_balance, summ_nleaves, summ_colless_mean, 
     summ_colless_median)
 
-d_type = summ_colless_variance
-dist = elfi.Distance('euclidean', d_type)
+# 'dist_birth_all' is a distance node containing the tree summary statistics that showed some
+# change in birth rate in the correct direction when 'birth_true' rate was set at 1 and 10
+dist_birth_all = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_branch_variance,
+    summ_height, summ_depth_median, summ_depth_variance, summ_balance, summ_nleaves, summ_colless_sum,
+    summ_colless_variance)
+
+# 'dist_birth_best' is a distance node containing the tree summary statistics that showed >= 2
+# change in birth rate in the correct direction when 'birth_true' rate was set at 1 and 10
+dist_birth_best = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_branch_variance,
+    summ_depth_median, summ_balance, summ_nleaves)
+
+# 'dist_death_all' is a distance node containing the tree summary statistics that showed some
+# change in death rate in the correct direction when 'death_true' rate was set at 1 and 10
+dist_death_all = elfi.Distance('euclidean', summ_branch_variance, summ_height, summ_depth_median, 
+    summ_nleaves, summ_root_colless, summ_colless_median)
+
+# 'dist_death_best' is a distance node containing the tree summary statistics that showed >= 2
+# change in death rate in the correct direction when 'death_true' rate was set at 1 and 10
+dist_death_best = elfi.Distance('euclidean', summ_height, summ_depth_median, summ_root_colless, summ_colless_median)
+
+# 'dist_shared_all' is a distance node containing the tree summary statistics that showed some
+# change in the correct direction for both 'birth_true' and 'death_true' when each rate was set 
+# at 1 and 10
+dist_shared_all = elfi.Distance('euclidean', summ_branch_variance, summ_height, summ_depth_median, summ_nleaves)
+
+# 'dist_shared_best' is a distance node containing the tree summary statistics that showed >= 2
+# change in the correct direction for both 'birth_true' and 'death_true' when each rate was set 
+# at 1 and 10
+dist_shared_best = elfi.Distance('euclidean', summ_branch_variance, summ_height, summ_depth_median, summ_nleaves)
+
+dist = dist_birth_all # choosing which distance node to use
 
 """
 'rej' is a rejection node used in inference with rejection sampling
@@ -162,7 +191,7 @@ simulations are performed in computation of 'dist'.
 """
 rej = elfi.Rejection(dist, batch_size = 1000)
 
-N = 10 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -187,13 +216,7 @@ generate ('N' / 'quant') trees and accept 'N' of them.
 quant = 0.1 # quantile of accepted trees
 result_quant = rej.sample(N, quantile = quant) 
 
-print(d_type)
-print("death: " + str(death_true))
-
 result_quant.summary() # summary statistics from the inference with rejection sampling
-
-print("-------")
-
 result_quant.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
 plt.show()
 
