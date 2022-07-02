@@ -89,8 +89,8 @@ def variance_colless_stat(tree_arr):
 """
 True parameters for birth and death rates (to be estimated by ABC).
 """
-birth_true = 6
-death_true = 2
+birth_true = 7
+death_true = 3
 
 """
 Prior distributions of rate parameters (uniform distributions).
@@ -191,7 +191,7 @@ simulations are performed in computation of 'dist'.
 """
 rej = elfi.Rejection(dist, batch_size = 1000)
 
-N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 1000 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
