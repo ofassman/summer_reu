@@ -5,10 +5,20 @@ import scipy
 import ete3
 import matplotlib.pyplot as plt
 
-def gen_tree_sims(b = 1, d = 1, random_state = None):
+
+
+
+#########################
+
+def gen_rates_bd(d, r):
+    gen_birth = d / (1 - r)
+    gen_death = r * gen_birth
+    return [gen_birth, gen_death]
+
+def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, random_state = None):
     """
     Returns a simulated phylogenetic tree (using growtree.gen_tree()) with the 
-    initial birth rate = 'b', initial death rate = 'd', and initial substitution 
+    initial birth rate = 'birth', initial death rate = 'death', and initial substitution 
     rate = 1. The tree is returned in a one element array in order to be compatible
     with the ELFI package. 'random_state' is not currently used, but is included
     as a parameter since some ELFI functions pass a value for 'random_state'
@@ -16,9 +26,16 @@ def gen_tree_sims(b = 1, d = 1, random_state = None):
     """
     arr = []
     random_state = random_state or np.random # this value is not currently used
-    arr.append(growtree.gen_tree(b, d, 1, 100, 1, 1, 1, 0, 100)) # simulate tree and place in 1 element array
+    rate_arr = gen_rates_bd(d, r)
+    birth = rate_arr[0]
+    death = rate_arr[1]
+    arr.append(growtree.gen_tree(birth, death, 1, 100, birth_shape, death_shape, sub_shape, 0, 100)) # simulate tree and place in 1 element array
     return arr
 
+
+
+
+###########################
 def tree_stat(tree_arr, summ_fn):
     """
     Applies function 'summ_fn()' to every element of 'tree_arr' and returns
@@ -86,25 +103,60 @@ def median_colless_stat(tree_arr):
 def variance_colless_stat(tree_arr):
     return tree_stat(tree_arr, growtree.tree_variance_colless)
 
+#########################
 """
-True parameters for birth and death rates (to be estimated by ABC).
+True parameters for diversification (d_true = birth - death) and turnover 
+(r_true = death / birth) rates (to be estimated by ABC). 'd_true' must be 
+at least 0 with no upper bound. 'r_true' must be between 0 (inclusive) and
+1 (exclusive).
 """
-birth_true = 7
-death_true = 3
+d_true = 4
+r_true = .3
+
+
+rate_arr = gen_rates_bd(d_true, r_true)
+birth_true = rate_arr[0]
+death_true = rate_arr[1]
+
+birth_s_true = 4
+death_s_true = 4
+sub_s_true = 4
+
+batch_size = 50
+
+class ExpPrior(elfi.Distribution):
+    def rvs(scale_arg, size = 1, random_state = None):
+        return scipy.stats.expon.rvs(scale = scale_arg, size = size, random_state = random_state)
 
 """
-Prior distributions of rate parameters (uniform distributions).
-"""
-birth = elfi.Prior(scipy.stats.uniform, 0, 10)
-death = elfi.Prior(scipy.stats.uniform, 0, 10)
+Prior distributions of rate parameters. 
 
-obs = (gen_tree_sims(birth_true, death_true))[0] # observed tree (tree simulated with true rate parameters)
+
+WRITE WHAT TYPE OF DIST
+"""
+d1 = ExpPrior()
+d = d1.rvs(100, batch_size)
+r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999)
+b1 = ExpPrior()
+birth_s = b1.rvs(100, batch_size)
+de1 = ExpPrior()
+death_s = de1.rvs(100, batch_size)
+s1 = ExpPrior()
+sub_s = s1.rvs(100, batch_size)
+
+
+obs = (gen_tree_sims(d_true, r_true, birth_s_true, death_s_true, sub_s_true))[0] # observed tree (tree simulated with true rate and shape parameters)
 
 """
 'sim' is a simulator node with 'gen_tree_sims()' function, the prior distributions of rate 
 parameters ('birth' and 'death'), and the obeserved tree ('obs') passed to it as arguments.
 """
-sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), birth, death, observed = obs) 
+sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, observed = obs) 
+
+
+#######################################
+
+
 
 """
 Below are summary nodes with each node having a unique tree summary statistic function
@@ -189,9 +241,9 @@ dist = dist_birth_all # choosing which distance node to use
 using 'dist' values in order to reject. 'batch_size' defines how many 
 simulations are performed in computation of 'dist'.
 """
-rej = elfi.Rejection(dist, batch_size = 1000)
+rej = elfi.Rejection(dist, batch_size = batch_size)
 
-N = 1000 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 10 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -230,6 +282,17 @@ the entire inference with rejection sampling process will occur twice.)
 For efficiency, choose one type of sampling per excecution of the file.
 """
 
+
+##########################
+
 # Display the true rates below to compare to the inferred rates
 print("true birth rate: " + str(birth_true))
 print("true death rate: " + str(death_true))
+
+print("true birth shape: " + str(birth_s_true))
+print("true death shape: " + str(death_s_true))
+print("true sub shape: " + str(sub_s_true))
+
+
+
+###################
