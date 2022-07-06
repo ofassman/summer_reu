@@ -367,7 +367,11 @@ def __tree_internal_height_lst(node, arr):
     if(node == None):
         return []
     if(not(node.is_leaf()) and not(node.is_root())): # if node is internal (not root or leaf)
-        arr.append(1/tree_height(node)) # add reciprocal of height of subtree rooted at 'node' to 'arr'
+        height_subtree = tree_height(node)
+        if(height_subtree != 0):
+            arr.append(1/tree_height(node)) # add reciprocal of height of subtree rooted at 'node' to 'arr'
+        else:
+            arr.append(0)
     # must find all internal nodes to add reciprocal of heights to 'arr'
     num_c = len(node.children)  
     if(num_c == 1): # tree with 1 child
