@@ -5,37 +5,45 @@ import scipy
 import ete3
 import matplotlib.pyplot as plt
 
-
-
-
-#########################
-
-def gen_rates_bd(d, r):
-    gen_birth = d / (1 - r)
-    gen_death = r * gen_birth
-    return [gen_birth, gen_death]
+def calc_rates_bd(d, r):
+    """
+    Returns a two-element array containing the birth and death rate 
+    calculated from the diversification rate, 'd', and the turnover 
+    rate, 'r'. Note that (diversification = birth - death) and 
+    (turnover = death / birth). Thus birth rate can be calculated by:
+        birth = diversification / (1 - turnover)
+    and death rate can be calculated by:
+        death = turnover * birth    
+    """
+    birth_calc = d / (1 - r) # calculate birth rate from 'd' and 'r'
+    death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
+    return [birth_calc, death_calc] # return birth and death rates in an array
 
 def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, random_state = None):
     """
     Returns a simulated phylogenetic tree (using growtree.gen_tree()) with the 
-    initial birth rate = 'birth', initial death rate = 'death', and initial substitution 
-    rate = 1. The tree is returned in a one element array in order to be compatible
-    with the ELFI package. 'random_state' is not currently used, but is included
-    as a parameter since some ELFI functions pass a value for 'random_state'
-    into this function.
+    initial diversification rate = 'd', initial turnover rate = 'r', initial 
+    substitution rate = 1. Initial birth and death rates are calculated from
+    the initial values for diversification and turnover (see 'gen_rates_bd()' 
+    function above for the calculation). Initial shapes for the distributions 
+    of rates for birth, death, and substitution are 'birth_shape', 'death_shape', 
+    and 'sub_shape', respectively. The tree is returned in a one element array 
+    in order to be compatible with the ELFI package. 'random_state' is not 
+    currently used, but is included as a parameter since some ELFI functions 
+    pass a value for 'random_state' into this function. Currently the value 
+    '1' is being passed in for 'branch_info' (branch length is a variable of 
+    the number of substitutions that occurred in that lineage) since this is
+    the most descriptive for generating summary statistics that accurately 
+    infer distribution shape parameters.
     """
     arr = []
     random_state = random_state or np.random # this value is not currently used
-    rate_arr = gen_rates_bd(d, r)
-    birth = rate_arr[0]
-    death = rate_arr[1]
+    rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
+    birth = rate_arr[0] # extract initial birth rate from result array
+    death = rate_arr[1] # extract initial death rate from result array
     arr.append(growtree.gen_tree(birth, death, 1, 100, birth_shape, death_shape, sub_shape, 1, 100)) # simulate tree and place in 1 element array
     return arr
 
-
-
-
-###########################
 def tree_stat(tree_arr, summ_fn):
     """
     Applies function 'summ_fn()' to every element of 'tree_arr' and returns
@@ -103,55 +111,65 @@ def median_colless_stat(tree_arr):
 def variance_colless_stat(tree_arr):
     return tree_stat(tree_arr, growtree.tree_variance_colless)
 
-#########################
 """
-True parameters for diversification (d_true = birth - death) and turnover 
-(r_true = death / birth) rates (to be estimated by ABC). 'd_true' must be 
-at least 0 with no upper bound. 'r_true' must be between 0 (inclusive) and
-1 (exclusive).
+Below are the true parameters for diversification (d) 
+and turnover (r) rates. Diversification and turnover rates 
+are related to birth and death rates by the following equations:
+    diversification = birth - death
+    turnover = death / birth
+'d_true' must be at least 0 with no upper bound. 'r_true' must be 
+between 0 (inclusive) and 1 (exclusive). The values for 'd_true' 
+and 'r_true' may be changed to evaluate how accurate ABC using 
+rejection sampling is at inferring the true parameters.
 """
-d_true = 100
-r_true = .5
-
-
-rate_arr = gen_rates_bd(d_true, r_true)
-birth_true = rate_arr[0]
-death_true = rate_arr[1]
-
-birth_s_true = 100
-death_s_true = 130
-sub_s_true = 170
-
-batch_size = 1000
+d_true = 80
+r_true = .3
 
 """
-Prior distributions of rate parameters. 
-
-
-WRITE WHAT TYPE OF DIST
+Below are the true parameters for birth and death rates. 
+Death rate must be greater than or equal to 0 and birth rate 
+must be greater than death rate.
 """
-d = elfi.Prior(scipy.stats.expon, 0, 100)
-r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999)
-
-birth_s = elfi.Prior(scipy.stats.expon, 0, 100)
-
-death_s = elfi.Prior(scipy.stats.expon, 0, 100)
-
-sub_s = elfi.Prior(scipy.stats.expon, 0, 100)
-
-
-obs = (gen_tree_sims(d_true, r_true, birth_s_true, death_s_true, sub_s_true))[0] # observed tree (tree simulated with true rate and shape parameters)
+rate_arr = calc_rates_bd(d_true, r_true) # calculating the true birth and death parameters 
+birth_true = rate_arr[0] # extracting birth rate
+death_true = rate_arr[1] # extracting death rate
 
 """
-'sim' is a simulator node with 'gen_tree_sims()' function, the prior distributions of rate 
-parameters ('birth' and 'death'), and the obeserved tree ('obs') passed to it as arguments.
+Below are the true parameters for the distribution shape parameters.
+'birth_s_true' is the shape of the distribution of birth rates 
+which were involved in generating the mutli-state birth-death (MSBD) tree. 
+'death_s_true' is the shape of the distribution of death rates and 
+'sub_s_true' is the shape of the distribution of substitution rates which 
+were involved in generating the MSBD tree. All distribution shape parameters 
+must be greater than or equal to 0 with no upper bound. The values for 
+'birth_s_true', 'death_s_true', and 'sub_s_true' may be changed to evaluate 
+how accurate ABC using rejection sampling is at inferring the true 
+distribution shape parameters.
+"""
+birth_s_true = 80
+death_s_true = 300
+sub_s_true = 150
+
+"""
+Prior distributions of rate and shape parameters. Prior distributions
+for 'd', 'birth_s', 'death_s', and 'sub_s' are modeled with an 
+exponential distribution using a scale of 100. The prior distribution 
+for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
+(exclusive). 
+"""
+d = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for diversification
+r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
+death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
+sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
+
+obs = (gen_tree_sims(d_true, r_true, birth_s_true, death_s_true, sub_s_true))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
+
+"""
+'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
+and shape parameters, and the obeserved tree ('obs') passed to it as arguments.
 """
 sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, observed = obs) 
-
-
-#######################################
-
-
 
 """
 Below are summary nodes with each node having a unique tree summary statistic function
@@ -236,6 +254,7 @@ dist = dist_birth_all # choosing which distance node to use
 using 'dist' values in order to reject. 'batch_size' defines how many 
 simulations are performed in computation of 'dist'.
 """
+batch_size = 1000
 rej = elfi.Rejection(dist, batch_size = batch_size)
 
 N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
@@ -248,12 +267,8 @@ takes to accept the specified number of trees ('N' trees).
 """
 # COMMENT OUT BLOCK BELOW IF QUANTILE METHOD IS USED
 # thresh = 0.5 # distance threshold
-# result_thresh = rej.sample(N, threshold = thresh) 
-
-# result_thresh.summary() # summary statistics from the inference with rejection sampling
-# # result_thresh.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
-# result_thresh.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
-# plt.show()
+# result_thresh = rej.sample(N, threshold = thresh) # generate result
+# result_type = result_thresh # setting method of rejection sampling
 
 """
 Below is rejection using quantiles. The quantile of trees size 'quant' 
@@ -262,12 +277,8 @@ generate ('N' / 'quant') trees and accept 'N' of them.
 """
 # COMMENT OUT BLOCK BELOW IF THRESHOLD METHOD IS USED
 quant = 0.1 # quantile of accepted trees
-result_quant = rej.sample(N, quantile = quant) 
-
-result_quant.summary() # summary statistics from the inference with rejection sampling
-# result_quant.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
-result_quant.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
-plt.show()
+result_quant = rej.sample(N, quantile = quant) # generate result
+result_type = result_quant # setting method of rejection sampling
 
 """
 Note that it is not necessary to sample using both types of rejection described 
@@ -277,25 +288,30 @@ the entire inference with rejection sampling process will occur twice.)
 For efficiency, choose one type of sampling per excecution of the file.
 """
 
+# result_type.summary() # summary statistics from the inference with rejection sampling
+# result_type.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+result_type.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
+plt.show() # display the plot of pairwise relationships
 
-##########################
-d_infer_mean = result_quant.samples['d'].mean()
-r_infer_mean = result_quant.samples['r'].mean()
-
-bd_infer_mean = gen_rates_bd(d_infer_mean, r_infer_mean)
+# Displaying the mean inferred rates below
+d_infer_mean = result_type.samples['d'].mean()
+r_infer_mean = result_type.samples['r'].mean()
+bd_infer_mean = calc_rates_bd(d_infer_mean, r_infer_mean) # calculating the mean inferred birth and death rates
+print("mean inferred diversification rate: " + str(d_infer_mean))
+print("mean inferred turnover rate: " + str(r_infer_mean))
 print("mean inferred birth rate: " + str(bd_infer_mean[0]))
 print("mean inferred death rate: " + str(bd_infer_mean[1]))
+print("mean inferred birth distribution shape: " + str(result_type.samples['birth_s'].mean()))
+print("mean inferred death distributon shape: " + str(result_type.samples['death_s'].mean()))
+print("mean inferred substitution distributon shape: " + str(result_type.samples['sub_s'].mean()))
+print()
+print()
 
-
-
-# Display the true rates below to compare to the inferred rates
+# Displaying the true rates below to compare to the mean inferred rates
+print("true diversification rate: " + str(d_true))
+print("true turnover rate: " + str(r_true))
 print("true birth rate: " + str(birth_true))
 print("true death rate: " + str(death_true))
-
-print("true birth shape: " + str(birth_s_true))
-print("true death shape: " + str(death_s_true))
-print("true sub shape: " + str(sub_s_true))
-
-
-
-###################
+print("true birth distributon shape: " + str(birth_s_true))
+print("true death distributon shape: " + str(death_s_true))
+print("true substitution distributon shape: " + str(sub_s_true))
