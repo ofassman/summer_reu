@@ -199,7 +199,7 @@ def outputNewick(t, name):
 def get_seq(seq_num = None):
     """
     Returns a genetic sequence for a cell in the simulated phylogeny (simulated using 'gen_tree'). 
-    If 'seq_num' is None (which is the defualt), the whole 'sequence number : sequence' dictionary
+    If 'seq_num' is None (which is the default), the whole 'sequence number : sequence' dictionary
     is returned. Otherwise, 'seq_num' can be initialized to an integer argument for the specific
     sequence corresponding to that sequence number to be returned.
     """
@@ -216,7 +216,7 @@ def get_seq(seq_num = None):
 def print_seq(seq_num = None):
     """
     Prints a genetic sequence for a cell in the simulated phylogeny (simulated using 'gen_tree'). 
-    If 'seq_num' is None (which is the defualt), the whole 'sequence number : sequence' dictionary
+    If 'seq_num' is None (which is the default), the whole 'sequence number : sequence' dictionary
     is printed in FASTA format. Otherwise, 'seq_num' can be initialized to an integer argument 
     for the specific sequence corresponding to that sequence number to be printed in FASTA format
     (i.e. the single 'sequence number : sequence' pair is printed).

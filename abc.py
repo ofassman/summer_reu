@@ -112,6 +112,27 @@ def variance_colless_stat(tree_arr):
     return tree_stat(tree_arr, growtree.tree_variance_colless)
 
 """
+Prior distributions of rate and shape parameters. Prior distributions
+for 'd', 'birth_s', 'death_s', and 'sub_s' are modeled with an 
+exponential distribution using a scale of 100. The prior distribution 
+for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
+(exclusive). 
+"""
+d = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for diversification
+r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
+death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
+sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
+
+def gen_param(prior_dist):
+    """
+    Draws a single sample from 'prior_dist' and returns it (where 
+    'prior_dist' is an object of the 'elfi.Prior' class). This 
+    function is used for generating true parameters.
+    """
+    return (prior_dist.generate())[0] # draw sample and extract the value from a 1 element array
+
+"""
 Below are the true parameters for diversification (d) 
 and turnover (r) rates. Diversification and turnover rates 
 are related to birth and death rates by the following equations:
@@ -119,11 +140,10 @@ are related to birth and death rates by the following equations:
     turnover = death / birth
 'd_true' must be at least 0 with no upper bound. 'r_true' must be 
 between 0 (inclusive) and 1 (exclusive). The values for 'd_true' 
-and 'r_true' may be changed to evaluate how accurate ABC using 
-rejection sampling is at inferring the true parameters.
+and 'r_true' are drawn from the prior distributions defined above.
 """
-d_true = 80
-r_true = .3
+d_true = gen_param(d)
+r_true = gen_param(r)
 
 """
 Below are the true parameters for birth and death rates. 
@@ -137,37 +157,23 @@ death_true = rate_arr[1] # extracting death rate
 """
 Below are the true parameters for the distribution shape parameters.
 'birth_s_true' is the shape of the distribution of birth rates 
-which were involved in generating the mutli-state birth-death (MSBD) tree. 
+which were involved in generating the multi-state birth-death (MSBD) tree. 
 'death_s_true' is the shape of the distribution of death rates and 
 'sub_s_true' is the shape of the distribution of substitution rates which 
 were involved in generating the MSBD tree. All distribution shape parameters 
 must be greater than or equal to 0 with no upper bound. The values for 
-'birth_s_true', 'death_s_true', and 'sub_s_true' may be changed to evaluate 
-how accurate ABC using rejection sampling is at inferring the true 
-distribution shape parameters.
+'birth_s_true', 'death_s_true', and 'sub_s_true' are drawn from the prior 
+distributions defined above.
 """
-birth_s_true = 80
-death_s_true = 300
-sub_s_true = 150
-
-"""
-Prior distributions of rate and shape parameters. Prior distributions
-for 'd', 'birth_s', 'death_s', and 'sub_s' are modeled with an 
-exponential distribution using a scale of 100. The prior distribution 
-for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
-(exclusive). 
-"""
-d = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for diversification
-r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
-birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
-death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
-sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
+birth_s_true = gen_param(birth_s)
+death_s_true = gen_param(death_s)
+sub_s_true = gen_param(sub_s)
 
 obs = (gen_tree_sims(d_true, r_true, birth_s_true, death_s_true, sub_s_true))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
 
 """
 'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
-and shape parameters, and the obeserved tree ('obs') passed to it as arguments.
+and shape parameters, and the observed tree ('obs') passed to it as arguments.
 """
 sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, observed = obs) 
 
@@ -192,7 +198,7 @@ summ_colless_median = elfi.Summary(median_colless_stat, sim)
 summ_colless_variance = elfi.Summary(variance_colless_stat, sim) 
 
 """
-Below are distance nodes that calculate the euclidian (squared distance): 
+Below are distance nodes that calculate the euclidean (squared distance): 
 ('summ_stat_1_sim' - 'summ_stat_1_obs') * 2 + ... + ('summ_stat_n_sim' - 'summ_stat_n_obs') * 2
 for 'n' summary statistics (where 'n' is the number of statistics provided in the creation
 of the distance node). 
@@ -204,13 +210,13 @@ dist_all_summ = elfi.Distance('euclidean', summ_branch_sum, summ_branch_mean, su
     summ_balance, summ_nleaves, summ_root_colless, summ_colless_sum, summ_colless_mean, 
     summ_colless_median, summ_colless_variance)
 
-# 'dist_mmv' is a distance node containing all summary statistics, but exluding tree summary 
+# 'dist_mmv' is a distance node containing all summary statistics, but excluding tree summary 
 # statistics which calculate sums (i.e. mean, median, and variance statistics, but not sum statistics)
 dist_mmv = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_branch_variance, 
     summ_height, summ_depth_mean, summ_depth_median, summ_depth_variance, summ_balance, 
     summ_nleaves,summ_colless_mean, summ_colless_median, summ_colless_variance)
 
-# 'dist_mm' is a distance node containing all summary statistics, but exluding tree summary 
+# 'dist_mm' is a distance node containing all summary statistics, but excluding tree summary 
 # statistics which calculate sums and variances (i.e. mean and median statistics, but not 
 # sum and variance statistics)
 dist_mm = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_height,
@@ -247,7 +253,7 @@ dist_shared_all = elfi.Distance('euclidean', summ_branch_variance, summ_height, 
 # at 1 and 10
 dist_shared_best = elfi.Distance('euclidean', summ_branch_variance, summ_height, summ_depth_median, summ_nleaves)
 
-dist = dist_birth_all # choosing which distance node to use
+dist = dist_all_summ # choosing which distance node to use
 
 """
 'rej' is a rejection node used in inference with rejection sampling
@@ -257,7 +263,7 @@ simulations are performed in computation of 'dist'.
 batch_size = 1000
 rej = elfi.Rejection(dist, batch_size = batch_size)
 
-N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 50 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -285,25 +291,40 @@ Note that it is not necessary to sample using both types of rejection described
 above (threshold and quantiles). One or the other is sufficient and using both 
 will needlessly increase the runtime of the program. (If both types are used, 
 the entire inference with rejection sampling process will occur twice.) 
-For efficiency, choose one type of sampling per excecution of the file.
+For efficiency, choose one type of sampling per execution of the file.
 """
 
-# result_type.summary() # summary statistics from the inference with rejection sampling
-# result_type.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
-result_type.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
+#result_type.summary() # summary statistics from the inference with rejection sampling
+result_type.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+#result_type.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
 plt.show() # display the plot of pairwise relationships
 
-# Displaying the mean inferred rates below
-d_infer_mean = result_type.samples['d'].mean()
-r_infer_mean = result_type.samples['r'].mean()
+# Displaying the mean and median inferred rates below
+d_infer = result_type.samples['d']
+d_infer_mean = np.mean(d_infer)
+d_infer_median = np.median(d_infer)
+r_infer = result_type.samples['r']
+r_infer_mean = np.mean(r_infer)
+r_infer_median = np.median(r_infer)
 bd_infer_mean = calc_rates_bd(d_infer_mean, r_infer_mean) # calculating the mean inferred birth and death rates
+bd_infer_median = calc_rates_bd(d_infer_median, r_infer_median) # calculating the median inferred birth and death rates
 print("mean inferred diversification rate: " + str(d_infer_mean))
+print("median inferred diversification rate: " + str(d_infer_median))
 print("mean inferred turnover rate: " + str(r_infer_mean))
+print("median inferred turnover rate: " + str(r_infer_median))
 print("mean inferred birth rate: " + str(bd_infer_mean[0]))
+print("median inferred birth rate: " + str(bd_infer_median[0]))
 print("mean inferred death rate: " + str(bd_infer_mean[1]))
-print("mean inferred birth distribution shape: " + str(result_type.samples['birth_s'].mean()))
-print("mean inferred death distributon shape: " + str(result_type.samples['death_s'].mean()))
-print("mean inferred substitution distributon shape: " + str(result_type.samples['sub_s'].mean()))
+print("median inferred death rate: " + str(bd_infer_median[1]))
+birth_s_infer = result_type.samples['birth_s']
+death_s_infer = result_type.samples['death_s']
+sub_s_infer = result_type.samples['sub_s']
+print("mean inferred birth distribution shape: " + str(np.mean(birth_s_infer)))
+print("median inferred birth distribution shape: " + str(np.median(birth_s_infer)))
+print("mean inferred death distribution shape: " + str(np.mean(death_s_infer)))
+print("median inferred death distribution shape: " + str(np.median(death_s_infer)))
+print("mean inferred substitution distribution shape: " + str(np.mean(sub_s_infer)))
+print("median inferred substitution distribution shape: " + str(np.median(sub_s_infer)))
 print()
 print()
 
@@ -312,6 +333,6 @@ print("true diversification rate: " + str(d_true))
 print("true turnover rate: " + str(r_true))
 print("true birth rate: " + str(birth_true))
 print("true death rate: " + str(death_true))
-print("true birth distributon shape: " + str(birth_s_true))
-print("true death distributon shape: " + str(death_s_true))
-print("true substitution distributon shape: " + str(sub_s_true))
+print("true birth distribution shape: " + str(birth_s_true))
+print("true death distribution shape: " + str(death_s_true))
+print("true substitution distribution shape: " + str(sub_s_true))
