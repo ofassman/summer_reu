@@ -256,9 +256,49 @@ dist_shared_all = elfi.Distance('euclidean', summ_branch_variance, summ_height, 
 # at 1 and 10
 dist_shared_best = elfi.Distance('euclidean', summ_branch_variance, summ_height, summ_depth_median, summ_nleaves)
 
-dist = dist_birth_all # choosing which distance node to use
+# 'dist_score_okay' is a distance node containing the tree summary statistics that showed > 0.5 score of 
+# closeness in inference for the shape and rate parameters. 0.5 points were given for every inference deemed
+# as close to the true value and 1 point was given for every inference that contained the true value (true value
+# was in the range created by the mean and median inferred parameter). 
+dist_score_okay = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_branch_variance, summ_height,
+    summ_depth_mean, summ_depth_variance, summ_balance, summ_colless_sum, summ_colless_mean, summ_colless_median)
 
-dist = elfi.Distance('euclidean', summ_colless_variance)
+# 'dist_score_good' is a distance node containing the tree summary statistics that showed > 1.5 score of 
+# closeness in inference for the shape and rate parameters. 0.5 points were given for every inference deemed
+# as close to the true value and 1 point was given for every inference that contained the true value (true value
+# was in the range created by the mean and median inferred parameter). 
+dist_score_good = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_height, summ_depth_mean, 
+    summ_depth_variance, summ_colless_mean, summ_colless_median)
+
+# 'dist_score_best' is a distance node containing the tree summary statistics that showed > 2 score of 
+# closeness in inference for the shape and rate parameters. 0.5 points were given for every inference deemed
+# as close to the true value and 1 point was given for every inference that contained the true value (true value
+# was in the range created by the mean and median inferred parameter). 
+dist_score_best = elfi.Distance('euclidean', summ_height, summ_depth_variance, summ_colless_mean)
+
+# 'dist_some_good' is a distance node containing the tree summary statistics that estimated some parameters well. 
+dist_some_good = elfi.Distance('euclidean', summ_branch_mean, summ_branch_median, summ_height, summ_depth_mean,
+    summ_depth_variance, summ_colless_sum, summ_colless_mean, summ_colless_median, summ_colless_variance)
+
+# 'dist_overall_good' is a distance node containing the tree summary statistics that overall estimated parameters well. 
+dist_overall_good = elfi.Distance('euclidean', summ_depth_mean, summ_branch_median, summ_height, summ_depth_variance, 
+    summ_colless_mean, summ_colless_median)
+
+# 'dist_overall_best' is a distance node containing the tree summary statistics that overall estimated parameters the closest. 
+dist_overall_best = elfi.Distance('euclidean', summ_depth_mean, summ_depth_variance)
+
+# 'dist_good_shape' is a distance node containing the tree summary statistics that best estimated shape parameters. 
+dist_good_shape = elfi.Distance('euclidean', summ_depth_mean, summ_depth_variance, summ_colless_median, 
+    summ_colless_variance, summ_colless_mean, summ_colless_sum)
+
+# 'dist_good_bd' is a distance node containing the tree summary statistics that best estimated birth and death rate parameters. 
+dist_good_bd = elfi.Distance('euclidean', summ_branch_median, summ_depth_mean, summ_depth_variance, summ_height, 
+    summ_colless_mean)
+
+dist = dist_overall_best # choosing which distance node to use
+
+print(dist)
+
 """
 'rej' is a rejection node used in inference with rejection sampling
 using 'dist' values in order to reject. 'batch_size' defines how many 
@@ -267,7 +307,7 @@ simulations are performed in computation of 'dist'.
 batch_size = 1000
 rej = elfi.Rejection(dist, batch_size = batch_size)
 
-N = 10 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -298,7 +338,7 @@ the entire inference with rejection sampling process will occur twice.)
 For efficiency, choose one type of sampling per execution of the file.
 """
 
-#result_type.summary() # summary statistics from the inference with rejection sampling
+result_type.summary() # summary statistics from the inference with rejection sampling
 result_type.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
 #result_type.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
 plt.show() # display the plot of pairwise relationships
