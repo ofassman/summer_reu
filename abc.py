@@ -253,7 +253,7 @@ dist_shared_all = elfi.Distance('euclidean', summ_branch_variance, summ_height, 
 # at 1 and 10
 dist_shared_best = elfi.Distance('euclidean', summ_branch_variance, summ_height, summ_depth_median, summ_nleaves)
 
-dist = dist_all_summ # choosing which distance node to use
+dist = dist_birth_all # choosing which distance node to use
 
 """
 'rej' is a rejection node used in inference with rejection sampling
@@ -263,7 +263,7 @@ simulations are performed in computation of 'dist'.
 batch_size = 1000
 rej = elfi.Rejection(dist, batch_size = batch_size)
 
-N = 50 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
 """
 Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -272,9 +272,9 @@ will be accepted as samples. The simulator will generate as many trees as it
 takes to accept the specified number of trees ('N' trees).
 """
 # COMMENT OUT BLOCK BELOW IF QUANTILE METHOD IS USED
-# thresh = 0.5 # distance threshold
-# result_thresh = rej.sample(N, threshold = thresh) # generate result
-# result_type = result_thresh # setting method of rejection sampling
+thresh = 0.1 # distance threshold
+result_thresh = rej.sample(N, threshold = thresh) # generate result
+result_type = result_thresh # setting method of rejection sampling
 
 """
 Below is rejection using quantiles. The quantile of trees size 'quant' 
@@ -282,9 +282,9 @@ with the smallest generated distances are accepted. The simulator will
 generate ('N' / 'quant') trees and accept 'N' of them.
 """
 # COMMENT OUT BLOCK BELOW IF THRESHOLD METHOD IS USED
-quant = 0.1 # quantile of accepted trees
-result_quant = rej.sample(N, quantile = quant) # generate result
-result_type = result_quant # setting method of rejection sampling
+#quant = 0.1 # quantile of accepted trees
+#result_quant = rej.sample(N, quantile = quant) # generate result
+#result_type = result_quant # setting method of rejection sampling
 
 """
 Note that it is not necessary to sample using both types of rejection described 
@@ -325,7 +325,6 @@ print("mean inferred death distribution shape: " + str(np.mean(death_s_infer)))
 print("median inferred death distribution shape: " + str(np.median(death_s_infer)))
 print("mean inferred substitution distribution shape: " + str(np.mean(sub_s_infer)))
 print("median inferred substitution distribution shape: " + str(np.median(sub_s_infer)))
-print()
 print()
 
 # Displaying the true rates below to compare to the mean inferred rates
