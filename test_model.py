@@ -1,14 +1,25 @@
-
 import matplotlib.pyplot as plt
+import growtree as gt
+import abc_tree as abct
 
-import subprocess
-  
-  
-# If your shell script has shebang, 
-# you can omit shell=True argument.
-subprocess.run(["/Users/ofass/OneDrive/Documents/CS/RiceSummer/summer_reu/abc.py"], shell=True)
-#import subprocess
 
-#call("source .venv/Scripts/activate")
-#call(["python", "{}".format('/Users/ofass/OneDrive/Documents/CS/RiceSummer/summer_reu/abc.py')])
+
+
+d_true = abct.gen_param(abct.d)
+r_true = abct.gen_param(abct.r)
+
+rate_arr = abct.calc_rates_bd(d_true, r_true) # calculating the true birth and death parameters 
+birth_true = rate_arr[0] # extracting birth rate
+death_true = rate_arr[1] # extracting death rate
+
+birth_s_true = abct.gen_param(abct.birth_s)
+death_s_true = abct.gen_param(abct.death_s)
+sub_s_true = abct.gen_param(abct.sub_s)
+
+
+
+
+
+
+
 

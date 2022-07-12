@@ -2,7 +2,7 @@ import abc_tree
 import growtree
 import matplotlib.pyplot as plt
 
-rates_arr = abc_tree.get_rates()
+rates_arr = abc_tree.run_main()
 obs_tree = rates_arr[0]
 d_rate_arr = rates_arr[1]
 r_rate_arr = rates_arr[2]
