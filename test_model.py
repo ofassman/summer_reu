@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from sqlalchemy import true
 import growtree as gt
 import abc_tree as abct
 import statistics
