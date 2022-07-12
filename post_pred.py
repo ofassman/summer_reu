@@ -3,12 +3,12 @@ import growtree
 import matplotlib.pyplot as plt
 
 rates_arr = abc_tree.run_main()
-obs_tree = rates_arr[0]
-d_rate_arr = rates_arr[1]
-r_rate_arr = rates_arr[2]
-birth_s_arr = rates_arr[3]
-death_s_arr = rates_arr[4]
-sub_s_arr = rates_arr[5]
+d_rate_arr = rates_arr[0]
+r_rate_arr = rates_arr[1]
+birth_s_arr = rates_arr[2]
+death_s_arr = rates_arr[3]
+sub_s_arr = rates_arr[4]
+obs_tree = rates_arr[5]
 
 n_sims = len(d_rate_arr)
 
@@ -34,3 +34,7 @@ plt.plot(depth_var_obs, 1, marker = "o", markersize = 5)
 plt.show()
 print(depth_mean_arr)
 print(depth_mean_obs) 
+
+print("----")
+print(depth_var_arr)
+print(depth_var_obs) 

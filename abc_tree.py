@@ -111,18 +111,6 @@ def median_colless_stat(tree_arr):
 def variance_colless_stat(tree_arr):
     return tree_stat(tree_arr, growtree.tree_variance_colless)
 
-"""
-Prior distributions of rate and shape parameters. Prior distributions
-for 'd', 'birth_s', 'death_s', and 'sub_s' are modeled with an 
-exponential distribution using a scale of 100. The prior distribution 
-for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
-(exclusive). 
-"""
-d = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for diversification
-r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
-birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
-death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
-sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
 
 def gen_param(prior_dist):
     """
@@ -132,44 +120,58 @@ def gen_param(prior_dist):
     """
     return (prior_dist.generate())[0] # draw sample and extract the value from a 1 element array
 
-"""
-Below are the true parameters for diversification (d) 
-and turnover (r) rates. Diversification and turnover rates 
-are related to birth and death rates by the following equations:
-    diversification = birth - death
-    turnover = death / birth
-'d_true' must be at least 0 with no upper bound. 'r_true' must be 
-between 0 (inclusive) and 1 (exclusive). The values for 'd_true' 
-and 'r_true' are drawn from the prior distributions defined above.
-"""
-d_true = gen_param(d)
-r_true = gen_param(r)
 
-"""
-Below are the true parameters for birth and death rates. 
-Death rate must be greater than or equal to 0 and birth rate 
-must be greater than death rate.
-"""
-rate_arr = calc_rates_bd(d_true, r_true) # calculating the true birth and death parameters 
-birth_true = rate_arr[0] # extracting birth rate
-death_true = rate_arr[1] # extracting death rate
 
-"""
-Below are the true parameters for the distribution shape parameters.
-'birth_s_true' is the shape of the distribution of birth rates 
-which were involved in generating the multi-state birth-death (MSBD) tree. 
-'death_s_true' is the shape of the distribution of death rates and 
-'sub_s_true' is the shape of the distribution of substitution rates which 
-were involved in generating the MSBD tree. All distribution shape parameters 
-must be greater than or equal to 0 with no upper bound. The values for 
-'birth_s_true', 'death_s_true', and 'sub_s_true' are drawn from the prior 
-distributions defined above.
-"""
-birth_s_true = gen_param(birth_s)
-death_s_true = gen_param(death_s)
-sub_s_true = gen_param(sub_s)
+def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
+    """
+    Prior distributions of rate and shape parameters. Prior distributions
+    for 'd', 'birth_s', 'death_s', and 'sub_s' are modeled with an 
+    exponential distribution using a scale of 100. The prior distribution 
+    for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
+    (exclusive). 
+    """
+    d = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for diversification
+    r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+    birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
+    death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
+    sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
 
-def run_main(isreal_obs = True, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
+    """
+    Below are the true parameters for diversification (d) 
+    and turnover (r) rates. Diversification and turnover rates 
+    are related to birth and death rates by the following equations:
+        diversification = birth - death
+        turnover = death / birth
+    'd_true' must be at least 0 with no upper bound. 'r_true' must be 
+    between 0 (inclusive) and 1 (exclusive). The values for 'd_true' 
+    and 'r_true' are drawn from the prior distributions defined above.
+    """
+    d_true = gen_param(d)
+    r_true = gen_param(r)
+
+    """
+    Below are the true parameters for birth and death rates. 
+    Death rate must be greater than or equal to 0 and birth rate 
+    must be greater than death rate.
+    """
+    rate_arr = calc_rates_bd(d_true, r_true) # calculating the true birth and death parameters 
+    birth_true = rate_arr[0] # extracting birth rate
+    death_true = rate_arr[1] # extracting death rate
+
+    """
+    Below are the true parameters for the distribution shape parameters.
+    'birth_s_true' is the shape of the distribution of birth rates 
+    which were involved in generating the multi-state birth-death (MSBD) tree. 
+    'death_s_true' is the shape of the distribution of death rates and 
+    'sub_s_true' is the shape of the distribution of substitution rates which 
+    were involved in generating the MSBD tree. All distribution shape parameters 
+    must be greater than or equal to 0 with no upper bound. The values for 
+    'birth_s_true', 'death_s_true', and 'sub_s_true' are drawn from the prior 
+    distributions defined above.
+    """
+    birth_s_true = gen_param(birth_s)
+    death_s_true = gen_param(death_s)
+    sub_s_true = gen_param(sub_s)
 
     # Below is the phylogeny from the real cancer data (given in Newick string format)
     tree_real_data = ete3.Tree("(n6:0,((((n4:0,n7:0)8bb16f00-dfee-4f81-ac96-767b993ca6e2:0,((((((n16:0,(h1:17,((((a2:0,a7:0)e7bc4028-414f-4bff-b699-8bd16b23ee7e:18,a3:1)2b854f8d-4936-436e-96c5-910be4aba19c:64,a5:2)816d774c-97d9-43e6-8b2e-f15671af8af2:62,(((h5:3,(a8:3,h8:0)09f1a603-d099-4870-9e79-d6e5bee8e2a3:8)0a18283f-9dc0-491c-9fea-1b8779299e72:30,(((h7:8,(h4:1,h6:0)6fb58ff1-8f8f-487e-893f-a7a5074f5230:22)ee5e30a1-dc03-43f1-9ad0-5a9811fb2360:25,h2:0)50a77d83-30fc-414d-b18b-96e2e4c9866c:10,((a4:3,a6:3)d9afdef5-aa08-4dcc-aa5b-a9b8649d4889:29,a1:0)2913b995-8502-4080-801f-42d014b5d58a:183)9f319495-041d-4361-86c3-785075bb1cf3:54)a6f16d8b-261e-4f09-83ec-99a518991759:82,h3:2)66771a30-0bee-44c5-8282-af5400c18959:149)bb4ffd6c-cf65-4ffb-bce2-cc434482b915:1155)6fffd3b9-b1f8-4bcf-bc47-c92f726cabfb:1325)389c6172-5350-4199-b387-29540a785b5a:42,n13:0)bf915916-25af-4cf4-b258-25422a0360e6:15,n11:0)15a37f26-1ebd-4a43-b3a5-a8962e5e0112:10,n15:0)5c9cf572-6674-45ed-8647-a96c30b2c098:7,n10:0)debcb1ee-4c8a-4db0-be04-25a7ad8e5aad:2,(n8:0,(n5:0,(n14:0,(n3:0,(n12:0,n9:0)ec159609-da23-43d0-814a-4981b51a1b72:0)c05653ec-9a44-4ab2-a5b0-8f3b3d10a41e:0)f7f52196-a2dc-443f-8e1d-54b5e4bb6dc2:0)3fc23945-5205-4af7-aaf8-3271f35280cf:0)ffe9b6b5-e105-4b3c-91e9-9482b268ff34:0)726af8d3-3dfe-49a3-bd23-0dfd36f568ff:0)27ece196-6123-4a35-bc65-db77090f1882:0,n1:0)fb7d141a-3eb9-4dd7-9bbd-8c079d65c0d3:0,n2:0)509e48c2-b79f-4dc2-afe1-67bedf7cc929:0);", format = 1)
@@ -309,7 +311,7 @@ def run_main(isreal_obs = True, sampling_type = "q", is_summary = False, is_plot
     batch_size = 1000
     rej = elfi.Rejection(dist, batch_size = batch_size)
 
-    N = 100 # number of accepted samples needed in 'result' in the inference with rejection sampling below
+    N = num_accept # number of accepted samples needed in 'result' in the inference with rejection sampling below
 
     result_type = None
 
@@ -389,11 +391,18 @@ def run_main(isreal_obs = True, sampling_type = "q", is_summary = False, is_plot
         print("true substitution distribution shape: " + str(sub_s_true))
 
     res = []
-    res.append(obs)
     res.append(d_infer)
     res.append(r_infer)
     res.append(birth_s_infer)
     res.append(death_s_infer)
     res.append(sub_s_infer)
+    res.append(obs)
+    if(not isreal_obs):
+        res.append(d_true)
+        res.append(r_true)
+        res.append(birth_s_true)
+        res.append(death_s_true)
+        res.append(sub_s_true)
     return res
-run_main()
+
+#run_main()
