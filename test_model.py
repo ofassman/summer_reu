@@ -140,4 +140,3 @@ def plot_subs_coverage():
     plot_coverage(subs_infer_arr, subs_pointx)
 
 plot_div_coverage()
-print()
