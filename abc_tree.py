@@ -298,8 +298,6 @@ dist_good_bd = elfi.Distance('euclidean', summ_branch_median, summ_depth_mean, s
 
 dist = dist_overall_best # choosing which distance node to use (dist_overall_best is the best candidate-- running on real data produces consistent results)
 
-print(dist)
-
 """
 'rej' is a rejection node used in inference with rejection sampling
 using 'dist' values in order to reject. 'batch_size' defines how many 
@@ -380,3 +378,13 @@ print("true death rate: " + str(death_true))
 print("true birth distribution shape: " + str(birth_s_true))
 print("true death distribution shape: " + str(death_s_true))
 print("true substitution distribution shape: " + str(sub_s_true))
+
+def get_rates():
+    res = []
+    res.append(obs)
+    res.append(d_infer)
+    res.append(r_infer)
+    res.append(birth_s_infer)
+    res.append(death_s_infer)
+    res.append(sub_s_infer)
+    return res
