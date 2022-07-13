@@ -2,7 +2,7 @@ import abc_tree
 import growtree as gt
 import matplotlib.pyplot as plt
 
-rates_arr = abc_tree.run_main() # get array of inferred rates from ABC
+rates_arr = abc_tree.run_main(num_accept=3) # get array of inferred rates from ABC
 
 # extract specific arrays of inferred rates
 d_rate_arr = rates_arr[0]
@@ -22,11 +22,10 @@ depth_mean_obs = gt.tree_depth_mean(obs_tree) # mean depth of the observed tree
 depth_var_obs = gt.tree_depth_variance(obs_tree) # variance of depth of the observed tree
 
 while i < n_sims: # generating posterior simulated trees and calculating statistics 
+        # generating the posterior simulated tree (using rates from the posterior distributions)
+    sim_tree = abc_tree.gen_tree_sims(d = d_rate_arr[i], r = r_rate_arr[i], birth_shape = birth_s_arr[i], death_shape = death_s_arr[i], sub_shape = sub_s_arr[i])[0]
     i += 1
 
-    # generating the posterior simulated tree (using rates from the posterior distributions)
-    sim_tree = abc_tree.gen_tree_sims(d = d_rate_arr[i], r = r_rate_arr[i], birth_shape = birth_s_arr[i], death_shape = death_s_arr[i], sub_shape = sub_s_arr[i])[0]
-   
     print(gt.getNewick(sim_tree))
     print()
 
