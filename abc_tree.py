@@ -41,7 +41,7 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
     birth = rate_arr[0] # extract initial birth rate from result array
     death = rate_arr[1] # extract initial death rate from result array
-    arr.append(growtree.gen_tree(birth, death, 1, 100, birth_shape, death_shape, sub_shape, 1, 100)) # simulate tree and place in 1 element array
+    arr.append(growtree.gen_tree(birth, death, sub_rate, 50000, birth_shape, death_shape, sub_shape, 1, 1000)) # simulate tree and place in 1 element array
     return arr
 
 def tree_stat(tree_arr, summ_fn):
@@ -144,7 +144,7 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
     for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
     (exclusive). 
     """
-    d = elfi.Prior(scipy.stats.expon, 0, .00005) # prior distribution for diversification
+    d = elfi.Prior(scipy.stats.expon, 0, .000025) # prior distribution for diversification
     r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
     birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
     death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
@@ -362,6 +362,8 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
 
     if is_plot: # plotting distribution of inferred rates and shapes
         result_type.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
+        plt.ylabel('Rate frequency')
+        plt.title('Distribution of rates for accepted samples')
         #result_type.plot_pairs() # plotting the pairwise relationships of the birth and death rates for the accepted samples
         plt.show() # display the plot of pairwise relationships
 
@@ -422,4 +424,4 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
 
     return res
     
-run_main(is_print=True) # uncomment to run abc directly by running this file
+#run_main(is_plot=True) # uncomment to run abc directly by running this file

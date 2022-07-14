@@ -55,6 +55,9 @@ def plot_div_exp_v_true():
     Plotting mean inferred diversification rate vs true diversification rate.
     """
     plt.plot(div_pointx, div_pointy, 'ro')
+    plt.xlabel('True diversification rate')
+    plt.ylabel('Mean inferred diversification rate')
+    plt.title('Mean inferred diversification rate vs true diversification rate')
     plt.show()
 
 def plot_turn_exp_v_true():
@@ -62,6 +65,9 @@ def plot_turn_exp_v_true():
     Plotting mean inferred turnover rate vs true turnover rate.
     """
     plt.plot(turn_pointx, turn_pointy, 'ro')
+    plt.xlabel('True turnover rate')
+    plt.ylabel('Mean inferred turnover rate')
+    plt.title('Mean inferred turnover rate vs true turnover rate')
     plt.show()
 
 def plot_births_exp_v_true():
@@ -69,6 +75,9 @@ def plot_births_exp_v_true():
     Plotting mean inferred birth shape vs true birth shape.
     """
     plt.plot(births_pointx, births_pointy, 'ro')
+    plt.xlabel('True birth distribution shape')
+    plt.ylabel('Mean inferred birth distribution shape')
+    plt.title('Mean inferred birth distribution shape vs true birth distribution shape')
     plt.show()
 
 def plot_deaths_exp_v_true():
@@ -76,6 +85,9 @@ def plot_deaths_exp_v_true():
     Plotting mean inferred death shape vs true death shape.
     """
     plt.plot(deaths_pointx, deaths_pointy, 'ro')
+    plt.xlabel('True death distribution shape')
+    plt.ylabel('Mean inferred death distribution shape')
+    plt.title('Mean inferred death distribution shape vs true death distribution shape')
     plt.show()
 
 def plot_subs_exp_v_true():
@@ -83,6 +95,9 @@ def plot_subs_exp_v_true():
     Plotting mean inferred substitution shape vs true substitution shape.
     """
     plt.plot(subs_pointx, subs_pointy, 'ro')
+    plt.xlabel('True substitution distribution shape')
+    plt.ylabel('Mean inferred substitution distribution shape')
+    plt.title('Mean inferred substitution distribution shape vs true substitution distribution shape')
     plt.show()
 
 def calc_percent(true_arr, interval_arr):
@@ -97,10 +112,11 @@ def calc_percent(true_arr, interval_arr):
             num_fails += 1
     return (len(true_arr) - num_fails) / len(true_arr) # equal to the number of rates in the interval / number of rates
 
-def plot_coverage(infer_arr, true_arr):
+def plot_coverage(infer_arr, true_arr, type):
     """
     Plotting fraction of elements in 'true_arr' (the true rates) that fall inside the 
     credible interval (created by the elements of 'infer_arr') vs the credible interval width.
+    'type' specifies what rate/shape is being plotted.
     """
     total_interval = statistics.quantiles(infer_arr, n = 100) # splitting the inferred rates into 100 percentiles
     interval_50 = [] # will hold the middle 50% of inferred rates
@@ -151,6 +167,9 @@ def plot_coverage(infer_arr, true_arr):
     percent_arr.append(calc_percent(true_arr, interval_95))
 
     plt.plot([50, 55, 60, 65, 70, 75, 80, 85, 90, 95], percent_arr, 'ro')
+    plt.ylabel('Fraction of true ' + str(type) + ' that fall inside the credible interval')
+    plt.xlabel('Credible interval width')
+    plt.title('Coverage for ' + str(type))
     plt.show()
 
 def plot_div_coverage(): 
@@ -158,32 +177,32 @@ def plot_div_coverage():
     Plotting fraction of true diversification rates that fall inside the
     credible interval vs the credible interval width.
     """
-    plot_coverage(div_infer_arr, div_pointx)
+    plot_coverage(div_infer_arr, div_pointx, "diversification rates")
 
 def plot_turn_coverage(): 
     """
     Plotting fraction of true turnover rates that fall inside the
     credible interval vs the credible interval width.
     """
-    plot_coverage(turn_infer_arr, turn_pointx)
+    plot_coverage(turn_infer_arr, turn_pointx, "turnover rates")
 
 def plot_births_coverage():
     """
     Plotting fraction of true birth shapes that fall inside the
     credible interval vs the credible interval width.
     """
-    plot_coverage(births_infer_arr, births_pointx)
+    plot_coverage(births_infer_arr, births_pointx, "birth distribution shapes")
 
 def plot_deaths_coverage():
     """
     Plotting fraction of true death shapes that fall inside the
     credible interval vs the credible interval width.
     """
-    plot_coverage(deaths_infer_arr, deaths_pointx)
+    plot_coverage(deaths_infer_arr, deaths_pointx, "death distribution shapes")
 
 def plot_subs_coverage():
     """
     Plotting fraction of true substitution shapes that fall inside the
     credible interval vs the credible interval width.
     """
-    plot_coverage(subs_infer_arr, subs_pointx)
+    plot_coverage(subs_infer_arr, subs_pointx, "substitution distribution shapes")

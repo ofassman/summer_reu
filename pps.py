@@ -36,11 +36,17 @@ while i < n_sims: # generating posterior simulated trees and calculating statist
 # plotting the distributions for the 2 statistics calculated on the posterior simulated trees
 # with the value of the statistic for the observed tree plotted as a point
 plt.subplot(121)
-plt.hist(depth_mean_arr, bins = 30)
+plt.hist(depth_mean_arr, bins = 40)
 plt.plot(depth_mean_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
+plt.ylabel('Rate frequency')
+plt.xlabel('Mean depths of posterior simulated trees')
+plt.title('Distribution of mean depths for posterior simulated trees compared to the observed tree')
 plt.subplot(122)
-plt.hist(depth_var_arr, bins = 30)
+plt.hist(depth_var_arr, bins = 40)
 plt.plot(depth_var_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
+plt.ylabel('Rate frequency')
+plt.xlabel('Depth variance of posterior simulated trees')
+plt.title('Distribution of depth variance for posterior simulated trees compared to the observed tree')
 plt.show()
 
 
