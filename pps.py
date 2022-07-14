@@ -2,7 +2,7 @@ import abc_tree
 import growtree as gt
 import matplotlib.pyplot as plt
 
-rates_arr = abc_tree.run_main(num_accept=3) # get array of inferred rates from ABC
+rates_arr = abc_tree.run_main() # get array of inferred rates from ABC
 
 # extract specific arrays of inferred rates
 d_rate_arr = rates_arr[0]
@@ -44,7 +44,7 @@ plt.plot(depth_var_obs, 1, marker = "o", markersize = 5) # plot observed statist
 plt.show()
 
 
-
+################################## testing program
 
 
 #print(depth_mean_arr)

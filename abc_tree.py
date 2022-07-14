@@ -19,7 +19,7 @@ def calc_rates_bd(d, r):
     death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
     return [birth_calc, death_calc] # return birth and death rates in an array
 
-def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, random_state = None):
+def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, random_state = None, sub_rate = 1):
     """
     Returns a simulated phylogenetic tree (using growtree.gen_tree()) with the 
     initial diversification rate = 'd', initial turnover rate = 'r', initial 
@@ -144,7 +144,7 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
     for 'r' is modeled with a uniform distribution from 0 (inclusive) to 1
     (exclusive). 
     """
-    d = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for diversification
+    d = elfi.Prior(scipy.stats.expon, 0, .00005) # prior distribution for diversification
     r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
     birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
     death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
@@ -422,4 +422,4 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
 
     return res
     
-#run_main() # uncomment to run abc directly by running this file
+run_main(is_print=True) # uncomment to run abc directly by running this file
