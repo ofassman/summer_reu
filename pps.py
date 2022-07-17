@@ -26,38 +26,22 @@ while i < n_sims: # generating posterior simulated trees and calculating statist
     sim_tree = abc_tree.gen_tree_sims(d = d_rate_arr[i], r = r_rate_arr[i], birth_shape = birth_s_arr[i], death_shape = death_s_arr[i], sub_shape = sub_s_arr[i])[0]
     i += 1
 
-    print(gt.getNewick(sim_tree))
-    print()
-
     # calculating the summary statistics on the posterior simulated tree 
     depth_mean_arr.append(gt.tree_depth_mean(sim_tree))
     depth_var_arr.append(gt.tree_depth_variance(sim_tree))
 
 # plotting the distributions for the 2 statistics calculated on the posterior simulated trees
 # with the value of the statistic for the observed tree plotted as a point
-plt.subplot(121)
-plt.hist(depth_mean_arr, bins = 40)
+plt.subplot(121) # plotting depth mean
+plt.hist(depth_mean_arr, bins = 50)
 plt.plot(depth_mean_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
 plt.ylabel('Rate frequency')
 plt.xlabel('Mean depths of posterior simulated trees')
 plt.title('Distribution of mean depths for posterior simulated trees compared to the observed tree')
-plt.subplot(122)
-plt.hist(depth_var_arr, bins = 40)
+plt.subplot(122) # plotting depth variance
+plt.hist(depth_var_arr, bins = 50)
 plt.plot(depth_var_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
 plt.ylabel('Rate frequency')
 plt.xlabel('Depth variance of posterior simulated trees')
 plt.title('Distribution of depth variance for posterior simulated trees compared to the observed tree')
 plt.show()
-
-
-################################## testing program
-
-
-#print(depth_mean_arr)
-#print(depth_mean_obs) 
-
-print("----")
-#print(depth_var_arr)
-#print(depth_var_obs) 
-
-print(gt.getNewick(obs_tree))
