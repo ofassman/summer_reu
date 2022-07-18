@@ -41,7 +41,7 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
     birth = rate_arr[0] # extract initial birth rate from result array
     death = rate_arr[1] # extract initial death rate from result array
-    arr.append(growtree.gen_tree(birth, death, sub_rate, 50000, birth_shape, death_shape, sub_shape, 1, 3375)) # simulate tree and place in 1 element array
+    arr.append(growtree.gen_tree(birth, death, sub_rate, 50000, birth_shape, death_shape, sub_shape, 1, 100)) # simulate tree and place in 1 element array
     return arr
 
 def tree_stat(tree_arr, summ_fn):
