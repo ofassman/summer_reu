@@ -1,8 +1,24 @@
 import growtree as gt
 import abc_tree as abc
 import matplotlib.pyplot as plt
+import elfi
+import scipy
+import math
 
-def div_rate_v_stats():
+
+d = elfi.Prior(scipy.stats.expon, 0, .000047) # prior distribution for diversification
+r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
+death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
+sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
+
+def shift_up_log(i):
+    if(i == 0):
+        return 0
+    return math.log10(i)
+
+
+def div_rate_v_stats(use_prior = True, N = 50):
     d_rate = 0.000005
     d_arr = []
     b_sum_arr = []
@@ -21,21 +37,28 @@ def div_rate_v_stats():
     median_colless_arr = []
     variance_colless_arr = []
 
-    r_rate = 0.8
-    birth_shape = 100
-    death_shape = 100
-    sub_shape = 100
+    r_rate = abc.gen_param(r)
+    birth_shape = abc.gen_param(birth_s)
+    death_shape = abc.gen_param(death_s)
+    sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < 20):
-        d_rate += i * 0.0000005
+    while(i < N):
+        if(use_prior):
+            d_rate = abc.gen_param(d)
+        else:
+            d_rate += i * 0.0000005
         d_arr.append(d_rate)
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         while(t == None):
             t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         print(t)
-        b_sum_arr.append(gt.tree_branch_sum(t))
+        branch_sum = gt.tree_branch_sum(t)
+        while(branch_sum == 0):
+            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+            branch_sum = gt.tree_branch_sum(t)
+        b_sum_arr.append(branch_sum)
         b_mean_arr.append(gt.tree_branch_mean(t))
         b_median_arr.append(gt.tree_branch_median(t))
         b_variance_arr.append(gt.tree_branch_variance(t))
@@ -52,6 +75,17 @@ def div_rate_v_stats():
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
     
+    b_sum_arr = list(map(math.log10, b_sum_arr))
+    b_mean_arr = list(map(shift_up_log, b_mean_arr))
+    b_variance_arr = list(map(shift_up_log, b_variance_arr))
+    balance_arr = list(map(shift_up_log, balance_arr))
+    nleaf_arr = list(map(shift_up_log, nleaf_arr))
+    root_colless_arr = list(map(shift_up_log, root_colless_arr))
+    sum_colless_arr = list(map(shift_up_log, sum_colless_arr))
+    variance_colless_arr = list(map(shift_up_log, variance_colless_arr))
+
+
+
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(d_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Div v branch sum')
@@ -85,7 +119,9 @@ def div_rate_v_stats():
     axs[2, 4].set_title('Variance colless')
 
     axs[0, 0].set_ylim(bottom = 0)
-    axs[0, 1].set_ylim(bottom = 0)
+    axs[0, 0].set_xlim(left = 0, right = .0001)
+    axs[0, 1].set_ylim(bottom = 0, top = 10)
+    
     axs[0, 2].set_ylim(bottom = 0)
     axs[0, 3].set_ylim(bottom = 0)
     axs[0, 4].set_ylim(bottom = 0)
@@ -101,7 +137,7 @@ def div_rate_v_stats():
     axs[2, 4].set_ylim(bottom = 0)
     plt.show()
 
-def turn_rate_v_stats():
+def turn_rate_v_stats(use_prior = True, N = 50):
     r_rate = 0.000005
     r_arr = []
     b_sum_arr = []
@@ -120,14 +156,17 @@ def turn_rate_v_stats():
     median_colless_arr = []
     variance_colless_arr = []
 
-    d_rate = 0.00005
-    birth_shape = 100
-    death_shape = 100
-    sub_shape = 100
+    d_rate = abc.gen_param(d)
+    birth_shape = abc.gen_param(birth_s)
+    death_shape = abc.gen_param(death_s)
+    sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < 20):
-        r_rate += i * 0.005
+    while(i < N):
+        if(use_prior):
+            r_rate = abc.gen_param(r)
+        else: # if use_prior is false, N must be <= 20
+            r_rate += i * 0.005
         r_arr.append(r_rate)
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
@@ -150,6 +189,12 @@ def turn_rate_v_stats():
         median_colless_arr.append(gt.tree_median_colless(t))
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
+
+    b_sum_arr = list(map(math.log10, b_sum_arr))
+    root_colless_arr = list(map(math.log10, root_colless_arr))
+    sum_colless_arr = list(map(math.log10, sum_colless_arr))
+    variance_colless_arr = list(map(math.log10, variance_colless_arr))
+
 
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(r_arr, b_sum_arr, 'ro')
@@ -182,9 +227,25 @@ def turn_rate_v_stats():
     axs[2, 3].set_title('Median colless')
     axs[2, 4].plot(r_arr, variance_colless_arr, 'ro')
     axs[2, 4].set_title('Variance colless')
+    
+    axs[0, 0].set_ylim(bottom = 0)
+    axs[0, 1].set_ylim(bottom = 0)
+    axs[0, 2].set_ylim(bottom = 0)
+    axs[0, 3].set_ylim(bottom = 0)
+    axs[0, 4].set_ylim(bottom = 0)
+    axs[1, 0].set_ylim(bottom = 0)
+    axs[1, 1].set_ylim(bottom = 0)
+    axs[1, 2].set_ylim(bottom = 0)
+    axs[1, 3].set_ylim(bottom = 0)
+    axs[1, 4].set_ylim(bottom = 0)
+    axs[2, 0].set_ylim(bottom = 0)
+    axs[2, 1].set_ylim(bottom = 0)
+    axs[2, 2].set_ylim(bottom = 0)
+    axs[2, 3].set_ylim(bottom = 0)
+    axs[2, 4].set_ylim(bottom = 0)
     plt.show()
 
-def birth_shape_v_stats():
+def birth_shape_v_stats(use_prior = True, N = 50):
     birth_shape = 1
     birth_s_arr = []
     b_sum_arr = []
@@ -203,14 +264,17 @@ def birth_shape_v_stats():
     median_colless_arr = []
     variance_colless_arr = []
 
-    d_rate = 0.00005
-    r_rate = 0.8
-    death_shape = 100
-    sub_shape = 100
+    d_rate = abc.gen_param(d)
+    r_rate = abc.gen_param(r)
+    death_shape = abc.gen_param(death_s)
+    sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < 20):
-        birth_shape += i * 2
+    while(i < N):
+        if(use_prior):
+            birth_shape = abc.gen_param(birth_s)
+        else:
+            birth_shape += i * 2
         birth_s_arr.append(birth_shape)
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
@@ -285,7 +349,7 @@ def birth_shape_v_stats():
 
     plt.show()
 
-def death_shape_v_stats():
+def death_shape_v_stats(use_prior = True, N = 50):
     death_shape = 1
     death_s_arr = []
     b_sum_arr = []
@@ -304,14 +368,17 @@ def death_shape_v_stats():
     median_colless_arr = []
     variance_colless_arr = []
 
-    d_rate = 0.00005
-    r_rate = 0.8
-    birth_shape = 100
-    sub_shape = 100
+    d_rate = abc.gen_param(d)
+    r_rate = abc.gen_param(r)
+    birth_shape = abc.gen_param(birth_s)
+    sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < 20):
-        death_shape += i * 2
+    while(i < N):
+        if(use_prior):
+            death_shape = abc.gen_param(death_s)
+        else:
+            death_shape += i * 2
         death_s_arr.append(death_shape)
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
@@ -386,7 +453,7 @@ def death_shape_v_stats():
 
     plt.show()
 
-def sub_shape_v_stats():
+def sub_shape_v_stats(use_prior = True, N = 50):
     sub_shape = 1
     sub_s_arr = []
     b_sum_arr = []
@@ -405,14 +472,17 @@ def sub_shape_v_stats():
     median_colless_arr = []
     variance_colless_arr = []
 
-    d_rate = 0.00005
-    r_rate = 0.8
-    birth_shape = 100
-    death_shape = 100
+    d_rate = abc.gen_param(d)
+    r_rate = abc.gen_param(r)
+    birth_shape = abc.gen_param(birth_s)
+    death_shape = abc.gen_param(death_s)
     i = 0
 
-    while(i < 20):
-        sub_shape += i * 2
+    while(i < N):
+        if(use_prior):
+            sub_shape = abc.gen_param(sub_s)
+        else:
+            sub_shape += i * 2
         sub_s_arr.append(sub_shape)
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
@@ -439,7 +509,6 @@ def sub_shape_v_stats():
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(sub_s_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Sub shape v branch sum')
-    axs[0, 0].set_ylim(left = 0)
     axs[0, 1].plot(sub_s_arr, b_mean_arr, 'ro')
     axs[0, 1].set_title('Branch mean')
     axs[0, 2].plot(sub_s_arr, b_median_arr, 'ro')
@@ -488,3 +557,7 @@ def sub_shape_v_stats():
     plt.show()
 
 div_rate_v_stats()
+turn_rate_v_stats()
+birth_shape_v_stats()
+death_shape_v_stats()
+sub_shape_v_stats()
