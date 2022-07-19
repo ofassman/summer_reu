@@ -55,29 +55,28 @@ while i < n_sims: # generating posterior simulated trees and calculating statist
 fig, axs = plt.subplots(2, 4)
 axs[0, 0].hist(branch_mean_arr, bins = 50)
 axs[0, 0].plot(branch_mean_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[0, 0].ylabel('Rate frequency')
-axs[0, 0].xlabel('Mean branch lengths of posterior simulated trees')
-#axs[0, 0].title('Distribution of mean branch lengths for posterior simulated trees compared to the observed tree')
+axs[0, 0].set_title('Mean branch lengths of posterior simulated trees')
+#axs[0, 0].set_title('Distribution of mean branch lengths for posterior simulated trees compared to the observed tree')
 axs[0, 1].hist(branch_median_arr, bins = 50)
 axs[0, 1].plot(branch_median_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[0, 1].xlabel('Median branch lengths of posterior simulated trees')
+axs[0, 1].set_title('Median branch lengths of posterior simulated trees')
 axs[0, 2].hist(branch_var_arr, bins = 50)
 axs[0, 2].plot(branch_var_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[0, 2].xlabel('Variance of branch lengths of posterior simulated trees')
+axs[0, 2].set_title('Variance of branch lengths of posterior simulated trees')
 axs[0, 3].hist(branch_sum_arr, bins = 50)
 axs[0, 3].plot(branch_sum_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[0, 3].xlabel('Sum of branch lengths of posterior simulated trees')
+axs[0, 3].set_title('Sum of branch lengths of posterior simulated trees')
 axs[1, 0].hist(height_arr, bins = 50)
 axs[1, 0].plot(height_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[1, 0].xlabel('Height of posterior simulated trees')
+axs[1, 0].set_title('Height of posterior simulated trees')
 axs[1, 1].hist(depth_var_arr, bins = 50)
 axs[1, 1].plot(depth_var_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[1, 1].xlabel('Variance of depth of posterior simulated trees')
+axs[1, 1].set_title('Variance of depth of posterior simulated trees')
 axs[1, 2].hist(sum_colless_arr, bins = 50)
 axs[1, 2].plot(sum_colless_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[1, 2].xlabel('Sum of colless indices of posterior simulated trees')
+axs[1, 2].set_title('Sum of colless indices of posterior simulated trees')
 axs[1, 3].hist(mean_colless_arr, bins = 50)
 axs[1, 3].plot(mean_colless_obs, 1, marker = "o", markersize = 5) # plot observed statistic point
-axs[1, 3].xlabel('Mean colless indices of posterior simulated trees')
+axs[1, 3].set_title('Mean colless indices of posterior simulated trees')
 
 plt.show()
