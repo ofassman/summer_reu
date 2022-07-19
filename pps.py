@@ -2,8 +2,6 @@ import abc_tree
 import growtree as gt
 import matplotlib.pyplot as plt
 
-from summer_reu.growtree import tree_branch_sum, tree_depth_variance, tree_height, tree_mean_colless, tree_sum_colless
-
 rates_arr = abc_tree.run_main() # get array of inferred rates from ABC
 
 # extract specific arrays of inferred rates
@@ -30,11 +28,11 @@ mean_colless_arr = [] # will hold the mean of the colless indices of the posteri
 branch_mean_obs = gt.tree_branch_mean(obs_tree)
 branch_median_obs =  gt.tree_branch_median(obs_tree)
 branch_var_obs = gt.tree_branch_variance(obs_tree)
-branch_sum_obs = tree_branch_sum(obs_tree)
-height_obs = tree_height(obs_tree)
-depth_var_obs = tree_depth_variance(obs_tree)
-sum_colless_obs = tree_sum_colless(obs_tree)
-mean_colless_obs = tree_mean_colless(obs_tree)
+branch_sum_obs = gt.tree_branch_sum(obs_tree)
+height_obs = gt.tree_height(obs_tree)
+depth_var_obs = gt.tree_depth_variance(obs_tree)
+sum_colless_obs = gt.tree_sum_colless(obs_tree)
+mean_colless_obs = gt.tree_mean_colless(obs_tree)
 
 while i < n_sims: # generating posterior simulated trees and calculating statistics 
         # generating the posterior simulated tree (using rates from the posterior distributions)
