@@ -206,3 +206,14 @@ def plot_subs_coverage():
     credible interval vs the credible interval width.
     """
     plot_coverage(subs_infer_arr, subs_pointx, "substitution distribution shapes")
+
+plot_div_exp_v_true()
+plot_turn_exp_v_true()
+plot_births_exp_v_true()
+plot_deaths_exp_v_true()
+plot_subs_exp_v_true()
+plot_div_coverage()
+plot_turn_coverage()
+plot_births_coverage()
+plot_deaths_coverage()
+plot_subs_coverage()

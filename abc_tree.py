@@ -315,7 +315,11 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
     dist_good_bd = elfi.Distance('euclidean', summ_branch_median, summ_depth_mean, summ_depth_variance, summ_height, 
         summ_colless_mean)
 
-    dist = dist_overall_best # choosing which distance node to use (dist_overall_best is the best candidate-- running on real data produces consistent results)
+    dist_scatterplots = elfi.Distance('euclidean', summ_depth_variance, summ_branch_mean, summ_branch_median, summ_height, 
+        summ_branch_variance, summ_branch_sum, summ_colless_mean, summ_colless_sum)
+    
+    
+    dist = dist_scatterplots # choosing which distance node to use 
 
     """
     'rej' is a rejection node used in inference with rejection sampling
@@ -424,4 +428,4 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
 
     return res
     
-#run_main(is_plot=True) # uncomment to run abc directly by running this file
+#run_main(is_plot = True) # uncomment to run abc directly by running this file
