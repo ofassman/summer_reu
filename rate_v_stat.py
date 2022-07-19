@@ -2,7 +2,6 @@ import growtree as gt
 import abc_tree as abc
 import matplotlib.pyplot as plt
 
-
 def div_rate_v_stats():
     d_rate = 0.000005
     d_arr = []
@@ -53,7 +52,6 @@ def div_rate_v_stats():
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
     
-
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(d_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Div v branch sum')
@@ -85,6 +83,22 @@ def div_rate_v_stats():
     axs[2, 3].set_title('Median colless')
     axs[2, 4].plot(d_arr, variance_colless_arr, 'ro')
     axs[2, 4].set_title('Variance colless')
+
+    axs[0, 0].set_ylim(bottom = 0)
+    axs[0, 1].set_ylim(bottom = 0)
+    axs[0, 2].set_ylim(bottom = 0)
+    axs[0, 3].set_ylim(bottom = 0)
+    axs[0, 4].set_ylim(bottom = 0)
+    axs[1, 0].set_ylim(bottom = 0)
+    axs[1, 1].set_ylim(bottom = 0)
+    axs[1, 2].set_ylim(bottom = 0)
+    axs[1, 3].set_ylim(bottom = 0)
+    axs[1, 4].set_ylim(bottom = 0)
+    axs[2, 0].set_ylim(bottom = 0)
+    axs[2, 1].set_ylim(bottom = 0)
+    axs[2, 2].set_ylim(bottom = 0)
+    axs[2, 3].set_ylim(bottom = 0)
+    axs[2, 4].set_ylim(bottom = 0)
     plt.show()
 
 def turn_rate_v_stats():
@@ -136,7 +150,6 @@ def turn_rate_v_stats():
         median_colless_arr.append(gt.tree_median_colless(t))
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
-    
 
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(r_arr, b_sum_arr, 'ro')
@@ -171,5 +184,307 @@ def turn_rate_v_stats():
     axs[2, 4].set_title('Variance colless')
     plt.show()
 
+def birth_shape_v_stats():
+    birth_shape = 1
+    birth_s_arr = []
+    b_sum_arr = []
+    b_mean_arr = []
+    b_median_arr = []
+    b_variance_arr = []
+    height_arr = []
+    d_mean_arr = []
+    d_median_arr = []
+    d_variance_arr = []
+    balance_arr = []
+    nleaf_arr = []
+    root_colless_arr = []
+    sum_colless_arr = []
+    mean_colless_arr = []
+    median_colless_arr = []
+    variance_colless_arr = []
 
-turn_rate_v_stats()
+    d_rate = 0.00005
+    r_rate = 0.8
+    death_shape = 100
+    sub_shape = 100
+    i = 0
+
+    while(i < 20):
+        birth_shape += i * 2
+        birth_s_arr.append(birth_shape)
+        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
+        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+        while(t == None):
+            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+        print(t)
+        b_sum_arr.append(gt.tree_branch_sum(t))
+        b_mean_arr.append(gt.tree_branch_mean(t))
+        b_median_arr.append(gt.tree_branch_median(t))
+        b_variance_arr.append(gt.tree_branch_variance(t))
+        height_arr.append(gt.tree_height(t))
+        d_mean_arr.append(gt.tree_depth_mean(t))
+        d_median_arr.append(gt.tree_depth_median(t))
+        d_variance_arr.append(gt.tree_depth_variance(t))
+        balance_arr.append(gt.tree_balance(t))
+        nleaf_arr.append(gt.tree_nleaf(t))
+        root_colless_arr.append(gt.tree_root_colless(t))
+        sum_colless_arr.append(gt.tree_sum_colless(t))
+        mean_colless_arr.append(gt.tree_mean_colless(t))
+        median_colless_arr.append(gt.tree_median_colless(t))
+        variance_colless_arr.append(gt.tree_variance_colless(t))
+        i += 1
+    
+    fig, axs = plt.subplots(3, 5)
+    axs[0, 0].plot(birth_s_arr, b_sum_arr, 'ro')
+    axs[0, 0].set_title('Birth shape v branch sum')
+    axs[0, 1].plot(birth_s_arr, b_mean_arr, 'ro')
+    axs[0, 1].set_title('Branch mean')
+    axs[0, 2].plot(birth_s_arr, b_median_arr, 'ro')
+    axs[0, 2].set_title('Branch median')
+    axs[0, 3].plot(birth_s_arr, b_variance_arr, 'ro')
+    axs[0, 3].set_title('Branch variance')
+    axs[0, 4].plot(birth_s_arr, height_arr, 'ro')
+    axs[0, 4].set_title('Height')
+    axs[1, 0].plot(birth_s_arr, d_mean_arr, 'ro')
+    axs[1, 0].set_title('Depth mean')
+    axs[1, 1].plot(birth_s_arr, d_median_arr, 'ro')
+    axs[1, 1].set_title('Depth median')
+    axs[1, 2].plot(birth_s_arr, d_variance_arr, 'ro')
+    axs[1, 2].set_title('Depth variance')
+    axs[1, 3].plot(birth_s_arr, balance_arr, 'ro')
+    axs[1, 3].set_title('Balance')
+    axs[1, 4].plot(birth_s_arr, nleaf_arr, 'ro')
+    axs[1, 4].set_title('Nleaf')
+    axs[2, 0].plot(birth_s_arr, root_colless_arr, 'ro')
+    axs[2, 0].set_title('Root colless')
+    axs[2, 1].plot(birth_s_arr, sum_colless_arr, 'ro')
+    axs[2, 1].set_title('Sum colless')
+    axs[2, 2].plot(birth_s_arr, mean_colless_arr, 'ro')
+    axs[2, 2].set_title('Mean colless')
+    axs[2, 3].plot(birth_s_arr, median_colless_arr, 'ro')
+    axs[2, 3].set_title('Median colless')
+    axs[2, 4].plot(birth_s_arr, variance_colless_arr, 'ro')
+    axs[2, 4].set_title('Variance colless')
+
+    
+    axs[0, 0].set_ylim(bottom = 0)
+    axs[0, 1].set_ylim(bottom = 0)
+    axs[0, 2].set_ylim(bottom = 0)
+    axs[0, 3].set_ylim(bottom = 0)
+    axs[0, 4].set_ylim(bottom = 0)
+    axs[1, 0].set_ylim(bottom = 0)
+    axs[1, 1].set_ylim(bottom = 0)
+    axs[1, 2].set_ylim(bottom = 0)
+    axs[1, 3].set_ylim(bottom = 0)
+    axs[1, 4].set_ylim(bottom = 0)
+    axs[2, 0].set_ylim(bottom = 0)
+    axs[2, 1].set_ylim(bottom = 0)
+    axs[2, 2].set_ylim(bottom = 0)
+    axs[2, 3].set_ylim(bottom = 0)
+    axs[2, 4].set_ylim(bottom = 0)
+
+    plt.show()
+
+def death_shape_v_stats():
+    death_shape = 1
+    death_s_arr = []
+    b_sum_arr = []
+    b_mean_arr = []
+    b_median_arr = []
+    b_variance_arr = []
+    height_arr = []
+    d_mean_arr = []
+    d_median_arr = []
+    d_variance_arr = []
+    balance_arr = []
+    nleaf_arr = []
+    root_colless_arr = []
+    sum_colless_arr = []
+    mean_colless_arr = []
+    median_colless_arr = []
+    variance_colless_arr = []
+
+    d_rate = 0.00005
+    r_rate = 0.8
+    birth_shape = 100
+    sub_shape = 100
+    i = 0
+
+    while(i < 20):
+        death_shape += i * 2
+        death_s_arr.append(death_shape)
+        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
+        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+        while(t == None):
+            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+        print(t)
+        b_sum_arr.append(gt.tree_branch_sum(t))
+        b_mean_arr.append(gt.tree_branch_mean(t))
+        b_median_arr.append(gt.tree_branch_median(t))
+        b_variance_arr.append(gt.tree_branch_variance(t))
+        height_arr.append(gt.tree_height(t))
+        d_mean_arr.append(gt.tree_depth_mean(t))
+        d_median_arr.append(gt.tree_depth_median(t))
+        d_variance_arr.append(gt.tree_depth_variance(t))
+        balance_arr.append(gt.tree_balance(t))
+        nleaf_arr.append(gt.tree_nleaf(t))
+        root_colless_arr.append(gt.tree_root_colless(t))
+        sum_colless_arr.append(gt.tree_sum_colless(t))
+        mean_colless_arr.append(gt.tree_mean_colless(t))
+        median_colless_arr.append(gt.tree_median_colless(t))
+        variance_colless_arr.append(gt.tree_variance_colless(t))
+        i += 1
+    
+    fig, axs = plt.subplots(3, 5)
+    axs[0, 0].plot(death_s_arr, b_sum_arr, 'ro')
+    axs[0, 0].set_title('Death shape v branch sum')
+    axs[0, 1].plot(death_s_arr, b_mean_arr, 'ro')
+    axs[0, 1].set_title('Branch mean')
+    axs[0, 2].plot(death_s_arr, b_median_arr, 'ro')
+    axs[0, 2].set_title('Branch median')
+    axs[0, 3].plot(death_s_arr, b_variance_arr, 'ro')
+    axs[0, 3].set_title('Branch variance')
+    axs[0, 4].plot(death_s_arr, height_arr, 'ro')
+    axs[0, 4].set_title('Height')
+    axs[1, 0].plot(death_s_arr, d_mean_arr, 'ro')
+    axs[1, 0].set_title('Depth mean')
+    axs[1, 1].plot(death_s_arr, d_median_arr, 'ro')
+    axs[1, 1].set_title('Depth median')
+    axs[1, 2].plot(death_s_arr, d_variance_arr, 'ro')
+    axs[1, 2].set_title('Depth variance')
+    axs[1, 3].plot(death_s_arr, balance_arr, 'ro')
+    axs[1, 3].set_title('Balance')
+    axs[1, 4].plot(death_s_arr, nleaf_arr, 'ro')
+    axs[1, 4].set_title('Nleaf')
+    axs[2, 0].plot(death_s_arr, root_colless_arr, 'ro')
+    axs[2, 0].set_title('Root colless')
+    axs[2, 1].plot(death_s_arr, sum_colless_arr, 'ro')
+    axs[2, 1].set_title('Sum colless')
+    axs[2, 2].plot(death_s_arr, mean_colless_arr, 'ro')
+    axs[2, 2].set_title('Mean colless')
+    axs[2, 3].plot(death_s_arr, median_colless_arr, 'ro')
+    axs[2, 3].set_title('Median colless')
+    axs[2, 4].plot(death_s_arr, variance_colless_arr, 'ro')
+    axs[2, 4].set_title('Variance colless')
+
+    
+    axs[0, 0].set_ylim(bottom = 0)
+    axs[0, 1].set_ylim(bottom = 0)
+    axs[0, 2].set_ylim(bottom = 0)
+    axs[0, 3].set_ylim(bottom = 0)
+    axs[0, 4].set_ylim(bottom = 0)
+    axs[1, 0].set_ylim(bottom = 0)
+    axs[1, 1].set_ylim(bottom = 0)
+    axs[1, 2].set_ylim(bottom = 0)
+    axs[1, 3].set_ylim(bottom = 0)
+    axs[1, 4].set_ylim(bottom = 0)
+    axs[2, 0].set_ylim(bottom = 0)
+    axs[2, 1].set_ylim(bottom = 0)
+    axs[2, 2].set_ylim(bottom = 0)
+    axs[2, 3].set_ylim(bottom = 0)
+    axs[2, 4].set_ylim(bottom = 0)
+
+    plt.show()
+
+def sub_shape_v_stats():
+    sub_shape = 1
+    sub_s_arr = []
+    b_sum_arr = []
+    b_mean_arr = []
+    b_median_arr = []
+    b_variance_arr = []
+    height_arr = []
+    d_mean_arr = []
+    d_median_arr = []
+    d_variance_arr = []
+    balance_arr = []
+    nleaf_arr = []
+    root_colless_arr = []
+    sum_colless_arr = []
+    mean_colless_arr = []
+    median_colless_arr = []
+    variance_colless_arr = []
+
+    d_rate = 0.00005
+    r_rate = 0.8
+    birth_shape = 100
+    death_shape = 100
+    i = 0
+
+    while(i < 20):
+        sub_shape += i * 2
+        sub_s_arr.append(sub_shape)
+        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
+        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+        while(t == None):
+            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
+        print(t)
+        b_sum_arr.append(gt.tree_branch_sum(t))
+        b_mean_arr.append(gt.tree_branch_mean(t))
+        b_median_arr.append(gt.tree_branch_median(t))
+        b_variance_arr.append(gt.tree_branch_variance(t))
+        height_arr.append(gt.tree_height(t))
+        d_mean_arr.append(gt.tree_depth_mean(t))
+        d_median_arr.append(gt.tree_depth_median(t))
+        d_variance_arr.append(gt.tree_depth_variance(t))
+        balance_arr.append(gt.tree_balance(t))
+        nleaf_arr.append(gt.tree_nleaf(t))
+        root_colless_arr.append(gt.tree_root_colless(t))
+        sum_colless_arr.append(gt.tree_sum_colless(t))
+        mean_colless_arr.append(gt.tree_mean_colless(t))
+        median_colless_arr.append(gt.tree_median_colless(t))
+        variance_colless_arr.append(gt.tree_variance_colless(t))
+        i += 1
+    
+    fig, axs = plt.subplots(3, 5)
+    axs[0, 0].plot(sub_s_arr, b_sum_arr, 'ro')
+    axs[0, 0].set_title('Sub shape v branch sum')
+    axs[0, 0].set_ylim(left = 0)
+    axs[0, 1].plot(sub_s_arr, b_mean_arr, 'ro')
+    axs[0, 1].set_title('Branch mean')
+    axs[0, 2].plot(sub_s_arr, b_median_arr, 'ro')
+    axs[0, 2].set_title('Branch median')
+    axs[0, 3].plot(sub_s_arr, b_variance_arr, 'ro')
+    axs[0, 3].set_title('Branch variance')
+    axs[0, 4].plot(sub_s_arr, height_arr, 'ro')
+    axs[0, 4].set_title('Height')
+    axs[1, 0].plot(sub_s_arr, d_mean_arr, 'ro')
+    axs[1, 0].set_title('Depth mean')
+    axs[1, 1].plot(sub_s_arr, d_median_arr, 'ro')
+    axs[1, 1].set_title('Depth median')
+    axs[1, 2].plot(sub_s_arr, d_variance_arr, 'ro')
+    axs[1, 2].set_title('Depth variance')
+    axs[1, 3].plot(sub_s_arr, balance_arr, 'ro')
+    axs[1, 3].set_title('Balance')
+    axs[1, 4].plot(sub_s_arr, nleaf_arr, 'ro')
+    axs[1, 4].set_title('Nleaf')
+    axs[2, 0].plot(sub_s_arr, root_colless_arr, 'ro')
+    axs[2, 0].set_title('Root colless')
+    axs[2, 1].plot(sub_s_arr, sum_colless_arr, 'ro')
+    axs[2, 1].set_title('Sum colless')
+    axs[2, 2].plot(sub_s_arr, mean_colless_arr, 'ro')
+    axs[2, 2].set_title('Mean colless')
+    axs[2, 3].plot(sub_s_arr, median_colless_arr, 'ro')
+    axs[2, 3].set_title('Median colless')
+    axs[2, 4].plot(sub_s_arr, variance_colless_arr, 'ro')
+    axs[2, 4].set_title('Variance colless')
+
+    axs[0, 0].set_ylim(bottom = 0)
+    axs[0, 1].set_ylim(bottom = 0)
+    axs[0, 2].set_ylim(bottom = 0)
+    axs[0, 3].set_ylim(bottom = 0)
+    axs[0, 4].set_ylim(bottom = 0)
+    axs[1, 0].set_ylim(bottom = 0)
+    axs[1, 1].set_ylim(bottom = 0)
+    axs[1, 2].set_ylim(bottom = 0)
+    axs[1, 3].set_ylim(bottom = 0)
+    axs[1, 4].set_ylim(bottom = 0)
+    axs[2, 0].set_ylim(bottom = 0)
+    axs[2, 1].set_ylim(bottom = 0)
+    axs[2, 2].set_ylim(bottom = 0)
+    axs[2, 3].set_ylim(bottom = 0)
+    axs[2, 4].set_ylim(bottom = 0)
+
+    plt.show()
+
+div_rate_v_stats()
