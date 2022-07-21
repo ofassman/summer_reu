@@ -119,7 +119,7 @@ def gen_param(prior_dist):
     """
     return (prior_dist.generate())[0] # draw sample and extract the value from a 1 element array
 
-def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
+def run_main(num_accept = 100, isreal_obs = True, is_rej = False, is_adapt_dist = True, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
     """
     Runs sampling via ABC. Returns an array containing the inferred rates 
     (from the accepted samples) and the observed tree. 'num_accept' is the 
@@ -199,7 +199,7 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
     and shape parameters, and the observed tree ('obs') passed to it as arguments.
     """
     sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, observed = obs) 
-
+    
     """
     Below are summary nodes with each node having a unique tree summary statistic function
     and all the simulated trees (includes the observed tree).
@@ -321,38 +321,52 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
     
     dist = dist_scatterplots # choosing which distance node to use 
 
-    """
-    'rej' is a rejection node used in inference with rejection sampling
-    using 'dist' values in order to reject. 'batch_size' defines how many 
-    simulations are performed in computation of 'dist'.
-    """
     batch_size = 1000
-    rej = elfi.Rejection(dist, batch_size = batch_size)
+    N = num_accept # number of accepted samples needed in 'result' in the sampling below
+    result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
 
-    N = num_accept # number of accepted samples needed in 'result' in the inference with rejection sampling below
+    if(is_rej):
+        """
+        'rej' is a rejection node used in inference with rejection sampling
+        using 'dist' values in order to reject. 'batch_size' defines how many 
+        simulations are performed in computation of 'dist'.
+        """
+        rej = elfi.Rejection(dist, batch_size = batch_size)
 
-    result_type = None # will specify which type of rejection is used (threshold or quantile)
+        if sampling_type == "t": # use threshold method
+            """
+            Below is rejection using a threshold 'thresh'. All simulated trees generated
+            from rates drawn from the priors that have a generated distance below 'thresh'
+            will be accepted as samples. The simulator will generate as many trees as it 
+            takes to accept the specified number of trees ('N' trees).
+            """
+            thresh = 0.1 # distance threshold
+            result_thresh = rej.sample(N, threshold = thresh) # generate result
+            result_type = result_thresh # setting method of rejection sampling
+        else: # use quantile method
+            """
+            Below is rejection using quantiles. The quantile of trees size 'quant' 
+            with the smallest generated distances are accepted. The simulator will 
+            generate ('N' / 'quant') trees and accept 'N' of them.
+            """
+            quant = 0.1 # quantile of accepted trees
 
-    if sampling_type == "t": # use threshold method
-        """
-        Below is rejection using a threshold 'thresh'. All simulated trees generated
-        from rates drawn from the priors that have a generated distance below 'thresh'
-        will be accepted as samples. The simulator will generate as many trees as it 
-        takes to accept the specified number of trees ('N' trees).
-        """
-        thresh = 0.1 # distance threshold
-        result_thresh = rej.sample(N, threshold = thresh) # generate result
-        result_type = result_thresh # setting method of rejection sampling
-    else: # use quantile method
-        """
-        Below is rejection using quantiles. The quantile of trees size 'quant' 
-        with the smallest generated distances are accepted. The simulator will 
-        generate ('N' / 'quant') trees and accept 'N' of them.
-        """
+            result_quant = rej.sample(N, quantile = quant) # generate result
+            result_type = result_quant # setting method of rejection sampling
+    elif(is_adapt_dist == False):
+        smc = elfi.SMC(dist, batch_size = batch_size)
+        schedule = [3, 1, 0.5]
+        short_schedule = [2]
+        result_smc = smc.sample(N, short_schedule)
+        result_type = result_smc
+    else:
+        dist = dist_overall_best
+        dist = elfi.AdaptiveDistance(summ_depth_mean, summ_branch_variance)
         quant = 0.1 # quantile of accepted trees
+        ada_smc = elfi.AdaptiveDistanceSMC(dist, batch_size = batch_size)
+        result_smc_ada = ada_smc.sample(N, 1, quantile = quant)
+        result_type = result_smc_ada
 
-        result_quant = rej.sample(N, quantile = quant) # generate result
-        result_type = result_quant # setting method of rejection sampling
 
     """
     Note that it is not necessary to sample using both types of rejection described 
@@ -362,7 +376,10 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
     For efficiency, choose one type of sampling per execution of the file.
     """
     if is_summary: # printing a brief summary of the inferred rates and shapes
-        result_type.summary() # summary statistics from the inference with rejection sampling
+        if is_rej:
+            result_type.summary() # summary statistics from the inference with rejection sampling
+        else:
+            result_type.summary(all = True)
 
     if is_plot: # plotting distribution of inferred rates and shapes
         result_type.plot_marginals() # plotting the marginal distributions of the birth and death rates for the accepted samples
@@ -428,4 +445,4 @@ def run_main(num_accept = 100, isreal_obs = True, sampling_type = "q", is_summar
 
     return res
     
-#run_main(is_plot = True) # uncomment to run abc directly by running this file
+#run_main(is_summary = True) # uncomment to run abc directly by running this file
