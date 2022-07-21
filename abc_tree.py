@@ -44,6 +44,10 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     arr.append(growtree.gen_tree(birth, death, sub_rate, 50000, birth_shape, death_shape, sub_shape, 1, 100)) # simulate tree and place in 1 element array
     return arr
 
+# array of statistic values for observed tree
+obs_tree_stats = []
+stat_index = 0
+
 def tree_stat(tree_arr, summ_fn):
     """
     Applies function 'summ_fn()' to every element of 'tree_arr' and returns
@@ -54,10 +58,17 @@ def tree_stat(tree_arr, summ_fn):
     res_arr = [] # array that will hold the summary statistic of the trees in 'tree_arr'
     for i in tree_arr: # for each tree in 'tree_arr'
         if(type(i) != ete3.coretype.tree.TreeNode): # if 'tree_arr' is an array of simulated trees
-            res_arr.append(summ_fn(i[0])) # calculate the summary statistic of current tree, 'i'
+            calc_stat = summ_fn(i[0])
+            curr_obs_stat = obs_tree_stats[stat_index]
+            norm_stat = (calc_stat - curr_obs_stat) / curr_obs_stat
+            res_arr.append(norm_stat) # calculate the summary statistic of current tree, 'i'
         else: # 'tree_arr' is a one element array containing only the observed tree ('obs')
-            res_arr.append(summ_fn(i.get_tree_root())) # calculate the summary statistic for 'obs' tree
-            break
+            obs_stat = summ_fn(i.get_tree_root())
+            obs_tree_stats.append(obs_stat)
+            res_arr.append(0) # calculate the summary statistic for 'obs' tree
+            return res_arr
+    
+    stat_index += 1
     return res_arr # return array of summary statistics
 
 """
@@ -119,7 +130,7 @@ def gen_param(prior_dist):
     """
     return (prior_dist.generate())[0] # draw sample and extract the value from a 1 element array
 
-def run_main(num_accept = 100, isreal_obs = True, is_rej = False, is_adapt_dist = True, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
+def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
     """
     Runs sampling via ABC. Returns an array containing the inferred rates 
     (from the accepted samples) and the observed tree. 'num_accept' is the 
@@ -353,12 +364,14 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, is_adapt_dist 
 
             result_quant = rej.sample(N, quantile = quant) # generate result
             result_type = result_quant # setting method of rejection sampling
-    elif(is_adapt_dist == False):
+    else:
         smc = elfi.SMC(dist, batch_size = batch_size)
-        schedule = [3, 1, 0.5]
-        short_schedule = [2]
+        schedule = [0.7, 0.2, 0.05]
+        short_schedule = [0.7]
         result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
+    
+    """
     else:
         dist = dist_overall_best
         dist = elfi.AdaptiveDistance(summ_depth_mean, summ_branch_variance)
@@ -366,7 +379,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, is_adapt_dist 
         ada_smc = elfi.AdaptiveDistanceSMC(dist, batch_size = batch_size)
         result_smc_ada = ada_smc.sample(N, 1, quantile = quant)
         result_type = result_smc_ada
-
+    """
 
     """
     Note that it is not necessary to sample using both types of rejection described 
@@ -445,4 +458,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, is_adapt_dist 
 
     return res
     
-#run_main(is_summary = True) # uncomment to run abc directly by running this file
+run_main(is_summary = True, is_rej= True) # uncomment to run abc directly by running this file
