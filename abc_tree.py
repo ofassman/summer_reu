@@ -336,8 +336,11 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
     dist_scatterplots = elfi.Distance('euclidean', summ_depth_variance, summ_branch_mean, summ_height, 
         summ_branch_variance, summ_branch_sum, summ_colless_mean, summ_colless_sum)
+
+    dist_scatterplots2 = elfi.Distance('euclidean', summ_depth_variance, summ_branch_mean, summ_height, 
+        summ_colless_mean, summ_root_colless)
     
-    dist = dist_scatterplots # choosing which distance node to use 
+    dist = dist_scatterplots2 # choosing which distance node to use 
 
     batch_size = 1000
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
