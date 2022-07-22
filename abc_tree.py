@@ -44,7 +44,7 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     arr.append(growtree.gen_tree(birth, death, sub_rate, 50000, birth_shape, death_shape, sub_shape, 1, 100)) # simulate tree and place in 1 element array
     return arr
 
-# array of statistic values for observed tree
+# array of statistic values for observed tree, used for normalization of statistics
 obs_tree_stats = []
 stat_index = 0
 
@@ -53,21 +53,27 @@ def tree_stat(tree_arr, summ_fn):
     Applies function 'summ_fn()' to every element of 'tree_arr' and returns
     the array of results. 'summ_fn()' is a summary function that takes in a single
     tree and returns a numerical value (e.g. tree height, mean branch length,
-    colless index).
+    colless index). The array of statistics is then normalized by subtracting off the 
+    observed statistic from each element and then dividing by the observed statistic.
     """
+    global obs_tree_stats # holds (or will hold) the observed stats
+    global stat_index # keeps track of which stat is the current one
+
     res_arr = [] # array that will hold the summary statistic of the trees in 'tree_arr'
     for i in tree_arr: # for each tree in 'tree_arr'
         if(type(i) != ete3.coretype.tree.TreeNode): # if 'tree_arr' is an array of simulated trees
-            calc_stat = summ_fn(i[0])
-            curr_obs_stat = obs_tree_stats[stat_index]
-            norm_stat = (calc_stat - curr_obs_stat) / curr_obs_stat
-            res_arr.append(norm_stat) # calculate the summary statistic of current tree, 'i'
+            calc_stat = summ_fn(i[0]) # calculate the summary statistic of current tree, 'i'
+            curr_obs_stat = obs_tree_stats[stat_index] # get statistic value for observed tree
+            if(curr_obs_stat == 0): # if observed stat is 0, no need to normalize
+                norm_stat = calc_stat 
+            else: # normalize current statistic with observed statistic
+                norm_stat = (calc_stat - curr_obs_stat) / curr_obs_stat 
+            res_arr.append(norm_stat) 
         else: # 'tree_arr' is a one element array containing only the observed tree ('obs')
-            obs_stat = summ_fn(i.get_tree_root())
-            obs_tree_stats.append(obs_stat)
-            res_arr.append(0) # calculate the summary statistic for 'obs' tree
+            obs_stat = summ_fn(i.get_tree_root()) # calculate the summary statistic for 'obs' tree
+            obs_tree_stats.append(obs_stat) # add observed statistic to array
+            res_arr.append(0) 
             return res_arr
-    
     stat_index += 1
     return res_arr # return array of summary statistics
 
@@ -140,7 +146,9 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     and an observed tree is created by simulating a tree with these true rates.
     If 'isreal_obs' is 'False', the array that is returned also contains the 
     artificial true values for the rates (as well as the inferred rates and the 
-    observed tree). 'sampling_type' is by default "q", which means a quantile 
+    observed tree). 'is_rej' will specify whether ABC SMC or rejection sampling
+    is used (if 'is_rej' is 'True' then rejection sampling is used).    
+    'sampling_type' is by default "q", which means a quantile 
     method is used, but if it is set to "t", a threshold method is used. If 
     'is_summary' is set to 'True', a brief summary of the inferred rates will 
     be printed to the terminal. If 'is_plot' is set to 'True', the distribution 
@@ -326,9 +334,8 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     dist_good_bd = elfi.Distance('euclidean', summ_branch_median, summ_depth_mean, summ_depth_variance, summ_height, 
         summ_colless_mean)
 
-    dist_scatterplots = elfi.Distance('euclidean', summ_depth_variance, summ_branch_mean, summ_branch_median, summ_height, 
+    dist_scatterplots = elfi.Distance('euclidean', summ_depth_variance, summ_branch_mean, summ_height, 
         summ_branch_variance, summ_branch_sum, summ_colless_mean, summ_colless_sum)
-    
     
     dist = dist_scatterplots # choosing which distance node to use 
 
@@ -336,14 +343,20 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
     result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
 
-    if(is_rej):
+    if(is_rej): # use rejection sampling
         """
         'rej' is a rejection node used in inference with rejection sampling
         using 'dist' values in order to reject. 'batch_size' defines how many 
         simulations are performed in computation of 'dist'.
         """
         rej = elfi.Rejection(dist, batch_size = batch_size)
-
+       
+        """
+        Note that it is not necessary to sample using both types of rejection described 
+        above (threshold and quantiles). One or the other is sufficient and using both 
+        will needlessly increase the runtime of the program. 
+        """
+        
         if sampling_type == "t": # use threshold method
             """
             Below is rejection using a threshold 'thresh'. All simulated trees generated
@@ -364,10 +377,10 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
             result_quant = rej.sample(N, quantile = quant) # generate result
             result_type = result_quant # setting method of rejection sampling
-    else:
+    else: # use ABC SMC
         smc = elfi.SMC(dist, batch_size = batch_size)
-        schedule = [0.7, 0.2, 0.05]
-        short_schedule = [0.7]
+        schedule = [0.7, 0.2, 0.05] # schedule is a list of thresholds to use for each population
+        short_schedule = [0.7] # use short schedule for 1 round of ABC SMC
         result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
     
@@ -381,13 +394,6 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         result_type = result_smc_ada
     """
 
-    """
-    Note that it is not necessary to sample using both types of rejection described 
-    above (threshold and quantiles). One or the other is sufficient and using both 
-    will needlessly increase the runtime of the program. (If both types are used, 
-    the entire inference with rejection sampling process will occur twice.) 
-    For efficiency, choose one type of sampling per execution of the file.
-    """
     if is_summary: # printing a brief summary of the inferred rates and shapes
         if is_rej:
             result_type.summary() # summary statistics from the inference with rejection sampling
@@ -458,4 +464,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
     return res
     
-run_main(is_summary = True, is_rej= True) # uncomment to run abc directly by running this file
+run_main(is_summary = True, is_plot = True) # uncomment to run abc directly by running this file

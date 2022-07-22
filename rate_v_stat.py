@@ -5,7 +5,7 @@ import elfi
 import scipy
 import math
 
-
+# Define prior distributions for parameters (same as in 'abc_tree.py')
 d = elfi.Prior(scipy.stats.expon, 0, .000047) # prior distribution for diversification
 r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
 birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
@@ -13,12 +13,23 @@ death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death d
 sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
 
 def zero_log(i):
+    """
+    Log10 function that is safe with zeros (makes log10(0) = 0).
+    """
     if(i == 0):
         return 0
     return math.log10(i)
 
 def div_rate_v_stats(use_prior = True, N = 100):
-    d_rate = 0.000005
+    """
+    Plots diversification rate on the x-axis and the value for various
+    tree statistics on the y-axis. 'use_prior' determines whether the
+    diversification rate will grow incrementally (if 'use_prior' is false)
+    or will be sampled from the prior distribution each time (if 'use_prior'
+    is true). 'N' is the number of trees generated from different diversification
+    rates from which statistics will be calculated.
+    """
+    d_rate = 0.000005 # initial div rate (used if 'use_prior' is false)
     d_arr = []
     b_sum_arr = []
     b_mean_arr = []
@@ -36,13 +47,14 @@ def div_rate_v_stats(use_prior = True, N = 100):
     median_colless_arr = []
     variance_colless_arr = []
 
+    # generate rates for non-div parameters (stay constant for all trees generated below)
     r_rate = abc.gen_param(r)
     birth_shape = abc.gen_param(birth_s)
     death_shape = abc.gen_param(death_s)
     sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < N):
+    while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
             d_rate = abc.gen_param(d)
         else:
@@ -51,10 +63,11 @@ def div_rate_v_stats(use_prior = True, N = 100):
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         n_leaf = gt.tree_nleaf(t)
-        while(n_leaf < 1):
+        while(n_leaf < 1): # tree must have at least 1 extant taxa at the current time
             t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
             n_leaf = gt.tree_nleaf(t)
-        #print(t)
+        
+        # calc tree stats
         b_sum_arr.append(gt.tree_branch_sum(t))
         b_mean_arr.append(gt.tree_branch_mean(t))
         b_median_arr.append(gt.tree_branch_median(t))
@@ -72,17 +85,7 @@ def div_rate_v_stats(use_prior = True, N = 100):
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
     
-    """
-    b_sum_arr = list(map(zero_log, b_sum_arr))
-    b_mean_arr = list(map(zero_log, b_mean_arr))
-    b_median_arr = list(map(zero_log, b_mean_arr))
-    b_variance_arr = list(map(zero_log, b_variance_arr))
-    height_arr = list(map(zero_log, height_arr))
-    d_mean_arr = list(map(zero_log, d_mean_arr))
-    d_median_arr = list(map(zero_log, d_mean_arr))
-    d_variance_arr = list(map(zero_log, d_variance_arr))
-    """
-
+    # plot stats vs rates
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(d_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Div v branch sum')
@@ -134,7 +137,16 @@ def div_rate_v_stats(use_prior = True, N = 100):
     plt.show()
 
 def turn_rate_v_stats(use_prior = True, N = 100):
-    r_rate = 0.000005
+    """
+    Plots turnover rate on the x-axis and the value for various
+    tree statistics on the y-axis. 'use_prior' determines whether the
+    turnover rate will grow incrementally (if 'use_prior' is false)
+    or will be sampled from the prior distribution each time (if 'use_prior'
+    is true). 'N' is the number of trees generated from different turnover
+    rates from which statistics will be calculated. 'N' must be <= 20 if
+    'use_prior' is false so that the turnover rate will be within [0,1].
+    """
+    r_rate = 0.000005 # initial turn rate (used if 'use_prior' is false)
     r_arr = []
     b_sum_arr = []
     b_mean_arr = []
@@ -152,13 +164,14 @@ def turn_rate_v_stats(use_prior = True, N = 100):
     median_colless_arr = []
     variance_colless_arr = []
 
+    # generate rates for non-turn parameters (stay constant for all trees generated below)
     d_rate = abc.gen_param(d)
     birth_shape = abc.gen_param(birth_s)
     death_shape = abc.gen_param(death_s)
     sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < N):
+    while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
             r_rate = abc.gen_param(r)
         else: # if use_prior is false, N must be <= 20
@@ -167,10 +180,12 @@ def turn_rate_v_stats(use_prior = True, N = 100):
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0):
+        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
             t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
             n_leaf = gt.tree_nleaf(t)
         #print(t)
+
+        # calc tree stats
         b_sum_arr.append(gt.tree_branch_sum(t))
         b_mean_arr.append(gt.tree_branch_mean(t))
         b_median_arr.append(gt.tree_branch_median(t))
@@ -188,13 +203,7 @@ def turn_rate_v_stats(use_prior = True, N = 100):
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
 
-    """
-    b_sum_arr = list(map(zero_log, b_sum_arr))
-    root_colless_arr = list(map(zero_log, root_colless_arr))
-    sum_colless_arr = list(map(zero_log, sum_colless_arr))
-    variance_colless_arr = list(map(zero_log, variance_colless_arr))
-    """
-
+    # plot stats vs rates
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(r_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Turn v branch sum')
@@ -242,10 +251,19 @@ def turn_rate_v_stats(use_prior = True, N = 100):
     axs[2, 2].set_ylim(bottom = 0)
     axs[2, 3].set_ylim(bottom = 0)
     axs[2, 4].set_ylim(bottom = 0)
+    
     plt.show()
 
 def birth_shape_v_stats(use_prior = True, N = 100):
-    birth_shape = 1
+    """
+    Plots birth shape on the x-axis and the value for various
+    tree statistics on the y-axis. 'use_prior' determines whether the
+    birth shape will grow incrementally (if 'use_prior' is false)
+    or will be sampled from the prior distribution each time (if 'use_prior'
+    is true). 'N' is the number of trees generated from different birth shapes
+    from which statistics will be calculated.
+    """ 
+    birth_shape = 1 # initial birth shape (used if 'use_prior' is false)
     birth_s_arr = []
     b_sum_arr = []
     b_mean_arr = []
@@ -263,13 +281,14 @@ def birth_shape_v_stats(use_prior = True, N = 100):
     median_colless_arr = []
     variance_colless_arr = []
 
+    # generate rates for non-birth parameters (stay constant for all trees generated below)
     d_rate = abc.gen_param(d)
     r_rate = abc.gen_param(r)
     death_shape = abc.gen_param(death_s)
     sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < N):
+    while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
             birth_shape = abc.gen_param(birth_s)
         else:
@@ -278,10 +297,12 @@ def birth_shape_v_stats(use_prior = True, N = 100):
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0):
+        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
             t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
             n_leaf = gt.tree_nleaf(t)
         #print(t)
+
+        # calc tree stats
         b_sum_arr.append(gt.tree_branch_sum(t))
         b_mean_arr.append(gt.tree_branch_mean(t))
         b_median_arr.append(gt.tree_branch_median(t))
@@ -298,6 +319,8 @@ def birth_shape_v_stats(use_prior = True, N = 100):
         median_colless_arr.append(gt.tree_median_colless(t))
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
+
+    # plot stats vs rates
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(birth_s_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Birth shape v branch sum')
@@ -330,7 +353,6 @@ def birth_shape_v_stats(use_prior = True, N = 100):
     axs[2, 4].plot(birth_s_arr, variance_colless_arr, 'ro')
     axs[2, 4].set_title('Variance colless')
 
-    
     axs[0, 0].set_ylim(bottom = 0)
     axs[0, 1].set_ylim(bottom = 0)
     axs[0, 2].set_ylim(bottom = 0)
@@ -350,7 +372,15 @@ def birth_shape_v_stats(use_prior = True, N = 100):
     plt.show()
 
 def death_shape_v_stats(use_prior = True, N = 100):
-    death_shape = 1
+    """
+    Plots death shape on the x-axis and the value for various
+    tree statistics on the y-axis. 'use_prior' determines whether the
+    death shape will grow incrementally (if 'use_prior' is false)
+    or will be sampled from the prior distribution each time (if 'use_prior'
+    is true). 'N' is the number of trees generated from different death shapes
+    from which statistics will be calculated.
+    """ 
+    death_shape = 1 # initial death shape (used if 'use_prior' is false)
     death_s_arr = []
     b_sum_arr = []
     b_mean_arr = []
@@ -368,13 +398,14 @@ def death_shape_v_stats(use_prior = True, N = 100):
     median_colless_arr = []
     variance_colless_arr = []
 
+    # generate rates for non-death parameters (stay constant for all trees generated below)
     d_rate = abc.gen_param(d)
     r_rate = abc.gen_param(r)
     birth_shape = abc.gen_param(birth_s)
     sub_shape = abc.gen_param(sub_s)
     i = 0
 
-    while(i < N):
+    while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
             death_shape = abc.gen_param(death_s)
         else:
@@ -383,10 +414,12 @@ def death_shape_v_stats(use_prior = True, N = 100):
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0):
+        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
             t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
             n_leaf = gt.tree_nleaf(t)
         #print(t)
+
+        # calc tree stats
         b_sum_arr.append(gt.tree_branch_sum(t))
         b_mean_arr.append(gt.tree_branch_mean(t))
         b_median_arr.append(gt.tree_branch_median(t))
@@ -404,6 +437,7 @@ def death_shape_v_stats(use_prior = True, N = 100):
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
     
+    # plot stats vs rates
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(death_s_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Death shape v branch sum')
@@ -435,7 +469,6 @@ def death_shape_v_stats(use_prior = True, N = 100):
     axs[2, 3].set_title('Median colless')
     axs[2, 4].plot(death_s_arr, variance_colless_arr, 'ro')
     axs[2, 4].set_title('Variance colless')
-
     
     axs[0, 0].set_ylim(bottom = 0)
     axs[0, 1].set_ylim(bottom = 0)
@@ -456,7 +489,15 @@ def death_shape_v_stats(use_prior = True, N = 100):
     plt.show()
 
 def sub_shape_v_stats(use_prior = True, N = 100):
-    sub_shape = 1
+    """
+    Plots sub shape on the x-axis and the value for various
+    tree statistics on the y-axis. 'use_prior' determines whether the
+    sub shape will grow incrementally (if 'use_prior' is false)
+    or will be sampled from the prior distribution each time (if 'use_prior'
+    is true). 'N' is the number of trees generated from different sub shapes
+    from which statistics will be calculated.
+    """ 
+    sub_shape = 1 # initial sub shape (used if 'use_prior' is false)
     sub_s_arr = []
     b_sum_arr = []
     b_mean_arr = []
@@ -474,13 +515,14 @@ def sub_shape_v_stats(use_prior = True, N = 100):
     median_colless_arr = []
     variance_colless_arr = []
 
+    # generate rates for non-sub parameters (stay constant for all trees generated below)
     d_rate = abc.gen_param(d)
     r_rate = abc.gen_param(r)
     birth_shape = abc.gen_param(birth_s)
     death_shape = abc.gen_param(death_s)
     i = 0
 
-    while(i < N):
+    while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
             sub_shape = abc.gen_param(sub_s)
         else:
@@ -489,10 +531,12 @@ def sub_shape_v_stats(use_prior = True, N = 100):
         bd_rates = abc.calc_rates_bd(d_rate, r_rate)
         t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
         n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0):
+        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
             t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
             n_leaf = gt.tree_nleaf(t)
         #print(t)
+
+        # calc tree stats
         b_sum_arr.append(gt.tree_branch_sum(t))
         b_mean_arr.append(gt.tree_branch_mean(t))
         b_median_arr.append(gt.tree_branch_median(t))
@@ -510,6 +554,7 @@ def sub_shape_v_stats(use_prior = True, N = 100):
         variance_colless_arr.append(gt.tree_variance_colless(t))
         i += 1
     
+    # plot stats vs rates
     fig, axs = plt.subplots(3, 5)
     axs[0, 0].plot(sub_s_arr, b_sum_arr, 'ro')
     axs[0, 0].set_title('Sub shape v branch sum')
