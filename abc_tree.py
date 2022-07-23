@@ -383,7 +383,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     else: # use ABC SMC
         smc = elfi.SMC(dist, batch_size = batch_size)
         schedule = [0.7, 0.2, 0.05] # schedule is a list of thresholds to use for each population
-        short_schedule = [0.7] # use short schedule for 1 round of ABC SMC
+        short_schedule = [1.25] # use short schedule for 1 round of ABC SMC
         result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
     
@@ -467,4 +467,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
     return res
     
-run_main(is_summary = True, is_plot = True) # uncomment to run abc directly by running this file
+#run_main(is_summary = True, is_plot = True, num_accept = 25) # uncomment to run abc directly by running this file
