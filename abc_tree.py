@@ -74,7 +74,7 @@ def tree_stat(tree_arr, summ_fn):
             obs_tree_stats.append(obs_stat) # add observed statistic to array
             res_arr.append(0) 
             return res_arr
-    stat_index += 1
+    stat_index = (stat_index + 1) % len(obs_tree_stats) # find new index of observed statistic
     return res_arr # return array of summary statistics
 
 """
@@ -382,7 +382,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
             result_type = result_quant # setting method of rejection sampling
     else: # use ABC SMC
         smc = elfi.SMC(dist, batch_size = batch_size)
-        schedule = [0.7, 0.2, 0.05] # schedule is a list of thresholds to use for each population
+        schedule = [2, 1.25] # schedule is a list of thresholds to use for each population
         short_schedule = [1.25] # use short schedule for 1 round of ABC SMC
         result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
