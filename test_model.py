@@ -3,7 +3,7 @@ import abc_tree as abct
 import statistics
 
 # initializing vars 
-N = 30 # number of different true rates from which trees will be simulated
+N = 20 # number of different true rates from which trees will be simulated
 div_pointx = [] # will hold the true diversification rates
 div_pointy = [] # will hold the inferred diversification rates
 turn_pointx = [] # will hold the true turnover rates
@@ -18,7 +18,7 @@ subs_pointy = [] # will hold the inferred substitution shapes
 i = 0 
 while i < N:
     i += 1
-    res_arr = abct.run_main(isreal_obs = False, num_accept = 10) # simulate a tree and infer the rates (from 10 accepted samples)
+    res_arr = abct.run_main(isreal_obs = False, num_accept = 5) # simulate a tree and infer the rates (from 10 accepted samples)
     
     # extract true rates from the returned array
     div_true = res_arr[6]
