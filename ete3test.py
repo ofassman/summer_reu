@@ -1,8 +1,8 @@
 import growtree
 
-t = growtree.gen_tree(0.5, 0.2, 0.5, 1, 1, 1, 1, 100)
+t = growtree.gen_tree(1, 0.01, 0.5, 1, 1, 1, 1, 100, goal_leaves = 10)
 print(t)
-print(growtree.getNewick(t))
+#print(growtree.getNewick(t))
 growtree.outputNewick(t, "NWtree")
-growtree.print_seq()
+#growtree.print_seq()
 print("done")
