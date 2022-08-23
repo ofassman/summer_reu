@@ -136,6 +136,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
     global __lineage_dict
     global __goal_leaves
     global __curr_leaves
+    global __seq_dict
     rng = random.Random()
     # initializing the tree and branch length
     t = Tree()
@@ -205,6 +206,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
             if(__curr_leaves >= __goal_leaves):
                 return t
             curr_t.add_child(c2)
+            del __lineage_dict[event_lineage_key]
             #
             #
             # things seem to be working correctly,
