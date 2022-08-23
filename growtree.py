@@ -182,6 +182,8 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
         if(branch_info == 2): 
             curr_t.dist += s * wait_time
         if(event == "birth"): # recursively call fn for children, same rates but different max_time
+            if(__curr_leaves >= __goal_leaves):
+                return t
             __curr_leaves += 1
             print(__curr_leaves)
             # max_time for children should be the time remaining (max_time - curr_time) divided by 2 (since 2 children)
@@ -200,11 +202,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
             __lineage_dict[c2] = [b, d, s]
             c2.dist = 0
             # children are only concatenated onto the parent tree if they are extant (non-None)
-            if(__curr_leaves >= __goal_leaves):
-                return t
             curr_t.add_child(c1)
-            if(__curr_leaves >= __goal_leaves):
-                return t
             curr_t.add_child(c2)
             del __lineage_dict[event_lineage_key]
             #
@@ -219,31 +217,33 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
             #t.add_child(curr_t)
             
         elif(event == "sub"): # change current rates based on sampling from a gamma distribution and continue to next event
-            # mean of gamma distribution is current rate
-            curr_b = gen_rate(curr_b, shape_b) # generate new birth rate
-            curr_d = gen_rate(curr_d, shape_d) # generate new death rate
-            curr_s = gen_rate(curr_s, shape_s) # generate new sub rate
-            sub_site = random.randint(0, len(curr_seq) - 1) # randomly pick a site to sub a base in the sequence
-            old_letter = curr_seq[sub_site] # find old base at this site so that the sub does not change the site to the same base
-            sub_letter = gen_sequence(1, off_lim = old_letter) # generate a new base for this site that is not the old base (not 'old_letter')
-            # generate the new sequence using the old sequence with one base changed from 'old_letter' to 'new_letter'
-            # at index 'sub_site' in the sequence
-            new_seq = ""
-            for i in range(0, sub_site, 1):
-                new_seq += curr_seq[i : i + 1]
-            new_seq += sub_letter
-            for j in range(sub_site + 1, len(seq), 1):
-                new_seq += curr_seq[j : j + 1]
-            curr_seq = new_seq # update sequence to newly mutated sequence
-            __seq_dict[event_lineage_key] = curr_seq # update the 'sequence number : sequence' pair in the '__seq_dict' dictionary
-            # if branch length is a variable of number of substitutions, increase lineage's branch length by 1
-            if(branch_info == 1):
-                curr_t.dist += 1
+            if(__curr_leaves != __goal_leaves):
+                # mean of gamma distribution is current rate
+                curr_b = gen_rate(curr_b, shape_b) # generate new birth rate
+                curr_d = gen_rate(curr_d, shape_d) # generate new death rate
+                curr_s = gen_rate(curr_s, shape_s) # generate new sub rate
+                sub_site = random.randint(0, len(curr_seq) - 1) # randomly pick a site to sub a base in the sequence
+                old_letter = curr_seq[sub_site] # find old base at this site so that the sub does not change the site to the same base
+                sub_letter = gen_sequence(1, off_lim = old_letter) # generate a new base for this site that is not the old base (not 'old_letter')
+                # generate the new sequence using the old sequence with one base changed from 'old_letter' to 'new_letter'
+                # at index 'sub_site' in the sequence
+                new_seq = ""
+                for i in range(0, sub_site, 1):
+                    new_seq += curr_seq[i : i + 1]
+                new_seq += sub_letter
+                for j in range(sub_site + 1, len(seq), 1):
+                    new_seq += curr_seq[j : j + 1]
+                curr_seq = new_seq # update sequence to newly mutated sequence
+                __seq_dict[event_lineage_key] = curr_seq # update the 'sequence number : sequence' pair in the '__seq_dict' dictionary
+                # if branch length is a variable of number of substitutions, increase lineage's branch length by 1
+                if(branch_info == 1):
+                    curr_t.dist += 1
         else: # event is death so return None (lineage goes extinct)
-            del __lineage_dict[event_lineage_key]
-            __curr_leaves -= 1
-            print(__curr_leaves)
-            return None
+            if(__curr_leaves != __goal_leaves):
+                del __lineage_dict[event_lineage_key]
+                __curr_leaves -= 1
+                print(__curr_leaves)
+                return None
     return t
         
 def gen_tree(b, d, s, shape_b, shape_d, shape_s, branch_info, seq_length, goal_leaves = 10):
