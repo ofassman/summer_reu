@@ -136,7 +136,7 @@ def gen_param(prior_dist):
     """
     return (prior_dist.generate())[0] # draw sample and extract the value from a 1 element array
 
-def run_main(num_accept = 100, isreal_obs = True, is_adaptive = False, is_rej = False, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
+def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
     """
     Runs sampling via ABC. Returns an array containing the inferred rates 
     (from the accepted samples) and the observed tree. 'num_accept' is the 
@@ -380,21 +380,12 @@ def run_main(num_accept = 100, isreal_obs = True, is_adaptive = False, is_rej = 
 
             result_quant = rej.sample(N, quantile = quant) # generate result
             result_type = result_quant # setting method of rejection sampling
-    elif(not(is_adaptive)): # use ABC SMC
+    else: # use ABC SMC
         smc = elfi.SMC(dist, batch_size = batch_size)
         schedule = [2, 1.25] # schedule is a list of thresholds to use for each population
         short_schedule = [1.25] # use short schedule for 1 round of ABC SMC
         result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
-    else:
-        dist = dist_overall_best
-        dist.become(elfi.AdaptiveDistance(sim))
-
-        #dist = elfi.AdaptiveDistance(summ_depth_mean, summ_branch_variance)
-        quant = 0.1 # quantile of accepted trees
-        ada_smc = elfi.AdaptiveDistanceSMC(dist, batch_size = batch_size)
-        result_smc_ada = ada_smc.sample(N, 1, quantile = quant)
-        result_type = result_smc_ada
 
     if is_summary: # printing a brief summary of the inferred rates and shapes
         if is_rej:
@@ -466,4 +457,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_adaptive = False, is_rej = 
 
     return res
     
-run_main(is_summary = True, is_adaptive = True, is_plot = True, num_accept = 25) # uncomment to run abc directly by running this file
+run_main(is_summary = True, is_plot = True, num_accept = 25) # uncomment to run abc directly by running this file
