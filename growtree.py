@@ -270,10 +270,19 @@ def gen_tree(b, d, s, shape_b, shape_d, shape_s, branch_info, seq_length, goal_l
     on this sequence, with modifications upon a substitution). Translations from sequence number to sequence can 
     be found in '__seq_dict' (a dictionary populated with 'sequence number : sequence' pairs).
     """
-    
+    global __seq_counter 
+    global __lineage_dict
+    global __curr_lineages
+    global __seq_dict
     seq = gen_sequence(seq_length) # generate random genetic sequence for root cell 
  
     t = growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info, goal_leaves) # generate the tree 
+    # reset all global vars before constructing another tree
+    __seq_dict = {} 
+    __seq_counter = 0
+    __lineage_dict = {} 
+    __curr_lineages = 1 
+
     return t
 
 def getNewick(t):

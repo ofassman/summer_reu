@@ -1,9 +1,11 @@
 import growtree
 
-t = growtree.gen_tree(1, 0.01, 0.5, 1, 1, 1, 1, 100, goal_leaves = 10)
-print(t)
-print(growtree.tree_nleaf(t))
-#print(growtree.getNewick(t))
-growtree.outputNewick(t, "NWtree")
-#growtree.print_seq()
+# check to see that all sim trees have 32 leaves, since in abc_tree some trees aren't hitting the leaf goal
+for i in range(0,100):
+    t = growtree.gen_tree(1, 0.01, 0.5, 1, 1, 1, 1, 100, goal_leaves = 32)
+    #print(t)
+    print(growtree.tree_nleaf(t))
+    #print(growtree.getNewick(t))
+    growtree.outputNewick(t, "NWtree")
+    #growtree.print_seq()
 print("done")

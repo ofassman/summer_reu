@@ -4,9 +4,6 @@ import numpy as np
 import scipy
 import ete3
 import matplotlib.pyplot as plt
-import os
-import tempfile
-import pyabc
 import statistics
 
 
@@ -68,14 +65,12 @@ def tree_stat(tree_arr, summ_fn):
     """
     global obs_tree_stats # holds (or will hold) the observed stats
     global stat_index # keeps track of which stat is the current one
-    
 
     res_arr = [] # array that will hold the summary statistic of the trees in 'tree_arr'
     for i in tree_arr: # for each tree in 'tree_arr'
         if(type(i) != ete3.coretype.tree.TreeNode): # if 'tree_arr' is an array of simulated trees
             calc_stat = summ_fn(i[0]) # calculate the summary statistic of current tree, 'i'
             """
-            
             curr_obs_stat = obs_tree_stats[stat_index] # get statistic value for observed tree
             if(curr_obs_stat == 0): # if observed stat is 0, no need to normalize
                 norm_stat = calc_stat 
@@ -90,10 +85,12 @@ def tree_stat(tree_arr, summ_fn):
             return res_arr
     stat_index = (stat_index + 1) % len(obs_tree_stats) # find new index of observed statistic
     
-    
     sd = (statistics.pstdev(res_arr))
-
-    wres_arr = [ x/sd for x in res_arr]
+    if(sd == 0):
+        sd = 1
+        print("FAIL: SD = 0")
+        print(res_arr)
+    wres_arr = [x/sd for x in res_arr]
     return wres_arr # return array of summary statistics
 
 """
@@ -233,15 +230,15 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     else: # simulate observed tree based on artificial true values sampled from the prior distributions 
         obs = (gen_tree_sims(d = d_true, r = r_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
     obs_nleaf = growtree.tree_nleaf(obs)
+    
+    print("sim: ", obs_nleaf)
+
     """
     'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
     and shape parameters, and the observed tree ('obs') passed to it as arguments.
     """
     sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, obs_nleaf, 1, observed = obs) 
     
-
-
-
     """
     Below are summary nodes with each node having a unique tree summary statistic function
     and all the simulated trees (includes the observed tree).
@@ -365,15 +362,10 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     
     #dist = dist_scatterplots2 # choosing which distance node to use 
 
-
-
     dist = elfi.Distance('minkowski', summ_depth_variance, p=1)
-    batch_size = 1000
+    batch_size = 20
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
     result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
-
-
-
 
     if(is_rej): # use rejection sampling
         """
@@ -486,4 +478,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
     return res
     
-run_main(is_summary = True, is_plot = True, num_accept = 25) # uncomment to run abc directly by running this file
+run_main(is_summary = True, num_accept = 5) # uncomment to run abc directly by running this file
