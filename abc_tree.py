@@ -38,14 +38,16 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     the most descriptive for generating summary statistics that accurately 
     infer distribution shape parameters.
     """
-    print("leafgoal", leaf_goal)
+    #print("leafgoal", leaf_goal)
     arr = []
     random_state = random_state or np.random # this value is not currently used
     rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
     birth = rate_arr[0] # extract initial birth rate from result array
     death = rate_arr[1] # extract initial death rate from result array
-    new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
+    #new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
+    new_tree = growtree.gen_tree(b = birth*10, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
     print("nleaf", growtree.tree_nleaf(new_tree))
+    #print(new_tree)
     arr.append(new_tree) # simulate tree and place in 1 element array
     
     return arr
