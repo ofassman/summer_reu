@@ -7,7 +7,7 @@ import math
 __seq_dict = {} # A global dictionary with 'sequence number : sequence' pairs. Populated by 'growtree()'.
 __seq_counter = 0 # A global counter for sequence number. Each cell has a unique number. Incremented by 'growtree()'.
 __lineage_dict = {} # A global dictionary keeping track every extant lineage (TreeNode objects) and their associated rates
-__goal_leaves = 0 # The number of leaves a simulated tree should reach before stopping
+#__goal_leaves = 0 # The number of leaves a simulated tree should reach before stopping
 __curr_lineages = 1 # A global counter of the current number of extant lineages (leaves) in a growing simulated tree
 
 def gen_sequence(length, off_lim = None):
@@ -129,14 +129,13 @@ def tree_nleaf(t):
         num_leaves = tree_nleaf(t.children[0]) + tree_nleaf(t.children[1]) # add leaves of both children
     return num_leaves
 
-def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
+def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info, goal_nleaf):
     """
     Returns a birth-death tree. Populates '__seq_dict' with 'sequence number : sequence' pairs. 
     """
     # Declaring static/global variables (described at the top of the file)
     global __seq_counter 
     global __lineage_dict
-    global __goal_leaves
     global __curr_lineages
     global __seq_dict
 
@@ -153,7 +152,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
     # The while loop below is the bulk of the 'growtree()' function. It runs while all of the lineages are not extinct 
     # and 'goal_leaves' has not yet been attained by the simulated tree (or it has just been attained and the tree will
     # stop growing up to, but not including, the next event).
-    while(__curr_lineages != 0 and __curr_lineages <= __goal_leaves): 
+    while(__curr_lineages != 0 and __curr_lineages <= goal_nleaf): 
         # finding the wait time to any event (b, d, or s) based on rates
         curr_time = 0
         rate_any_event = sum_dict(__lineage_dict) # sum of all the rates for all extant lineages
@@ -192,7 +191,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
             curr_t.dist += curr_s * wait_time
 
         if(event == "birth"): # the current lineage undergoes a birth event
-            if(__curr_lineages >= __goal_leaves): # if 'goal_leaves' has already been reached, do not include the event on the tree
+            if(__curr_lineages >= goal_nleaf): # if 'goal_leaves' has already been reached, do not include the event on the tree
                 return t
             
             __curr_lineages += 1 # increase the number of extant lineages by 1 (1 extant linage turns into 2)
@@ -221,7 +220,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
             del __lineage_dict[curr_t]
     
         elif(event == "sub"): # substitution so change current rates based on sampling from a gamma distribution and continue to next event
-            if(__curr_lineages >= __goal_leaves): # if 'goal_leaves' has already been reached, do not include the event on the tree 
+            if(__curr_lineages >= goal_nleaf): # if 'goal_leaves' has already been reached, do not include the event on the tree 
                 return t
             else:
                 # mean of gamma distribution is current rate
@@ -247,7 +246,7 @@ def growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info):
                     curr_t.dist += 1
 
         else: # event is death (lineage goes extinct)
-            if(__curr_lineages >= __goal_leaves): # if 'goal_leaves' has already been reached, do not include the event on the tree 
+            if(__curr_lineages >= goal_nleaf): # if 'goal_leaves' has already been reached, do not include the event on the tree 
                 return t
             else:
                 del __lineage_dict[event_lineage_key] # remove this lineage from the extant lineage dictionary
@@ -271,10 +270,10 @@ def gen_tree(b, d, s, shape_b, shape_d, shape_s, branch_info, seq_length, goal_l
     on this sequence, with modifications upon a substitution). Translations from sequence number to sequence can 
     be found in '__seq_dict' (a dictionary populated with 'sequence number : sequence' pairs).
     """
-    global __goal_leaves
+    
     seq = gen_sequence(seq_length) # generate random genetic sequence for root cell 
-    __goal_leaves = goal_leaves
-    t = growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info) # generate the tree 
+ 
+    t = growtree(seq, b, d, s, shape_b, shape_d, shape_s, branch_info, goal_leaves) # generate the tree 
     return t
 
 def getNewick(t):

@@ -10,10 +10,6 @@ import pyabc
 import statistics
 
 
-
-obs_nleaf = 0
-
-
 def calc_rates_bd(d, r):
     """
     Returns a two-element array containing the birth and death rate 
@@ -28,7 +24,7 @@ def calc_rates_bd(d, r):
     death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
     return [birth_calc, death_calc] # return birth and death rates in an array
 
-def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, random_state = None, sub_rate = 1):
+def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, leaf_goal = 10, sub_rate = 1, random_state = None):
     """
     Returns a simulated phylogenetic tree (using growtree.gen_tree()) with the 
     initial diversification rate = 'd', initial turnover rate = 'r', initial 
@@ -45,23 +41,22 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     the most descriptive for generating summary statistics that accurately 
     infer distribution shape parameters.
     """
-    global obs_nleaf
+    print("leafgoal", leaf_goal)
     arr = []
     random_state = random_state or np.random # this value is not currently used
     rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
     birth = rate_arr[0] # extract initial birth rate from result array
     death = rate_arr[1] # extract initial death rate from result array
-    if(obs_nleaf == 0):
-        leaf_goal = 10
-    else:
-        leaf_goal = obs_nleaf
-    arr.append(growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)) # simulate tree and place in 1 element array
+    new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
+    print("nleaf", growtree.tree_nleaf(new_tree))
+    arr.append(new_tree) # simulate tree and place in 1 element array
+    
     return arr
 
 # array of statistic values for observed tree, used for normalization of statistics
 obs_tree_stats = []
 stat_index = 0
-sd_lst = []
+
 
 def tree_stat(tree_arr, summ_fn):
     """
@@ -73,26 +68,33 @@ def tree_stat(tree_arr, summ_fn):
     """
     global obs_tree_stats # holds (or will hold) the observed stats
     global stat_index # keeps track of which stat is the current one
-    global sd_lst
+    
 
     res_arr = [] # array that will hold the summary statistic of the trees in 'tree_arr'
     for i in tree_arr: # for each tree in 'tree_arr'
         if(type(i) != ete3.coretype.tree.TreeNode): # if 'tree_arr' is an array of simulated trees
             calc_stat = summ_fn(i[0]) # calculate the summary statistic of current tree, 'i'
+            """
+            
             curr_obs_stat = obs_tree_stats[stat_index] # get statistic value for observed tree
             if(curr_obs_stat == 0): # if observed stat is 0, no need to normalize
                 norm_stat = calc_stat 
             else: # normalize current statistic with observed statistic
                 norm_stat = (calc_stat - curr_obs_stat) / curr_obs_stat 
-            res_arr.append(norm_stat) 
+            """
+            res_arr.append(calc_stat) 
         else: # 'tree_arr' is a one element array containing only the observed tree ('obs')
             obs_stat = summ_fn(i.get_tree_root()) # calculate the summary statistic for 'obs' tree
             obs_tree_stats.append(obs_stat) # add observed statistic to array
             res_arr.append(0) 
             return res_arr
     stat_index = (stat_index + 1) % len(obs_tree_stats) # find new index of observed statistic
-    sd_lst.append(statistics.pstdev(res_arr))
-    return res_arr # return array of summary statistics
+    
+    
+    sd = (statistics.pstdev(res_arr))
+
+    wres_arr = [ x/sd for x in res_arr]
+    return wres_arr # return array of summary statistics
 
 """
 Below are the set of summary statistic functions that can be passed 
@@ -151,7 +153,7 @@ def gen_param(prior_dist):
     'prior_dist' is an object of the 'elfi.Prior' class). This 
     function is used for generating true parameters.
     """
-    return prior_dist.rvs()["mu"] # draw sample and extract the value from a 1 element array
+    return (prior_dist.generate())[0] # draw sample and extract the value from a 1 element array
 
 def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type = "q", is_summary = False, is_plot = False, is_print = False):
     """
@@ -181,11 +183,11 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     (exclusive). 
     """
 
-    d = pyabc.Distribution(mu=pyabc.RV("expon", 0, .000047)) # prior distribution for diversification
-    r = pyabc.Distribution(mu=pyabc.RV("expon", 0, 0.999999999999999999)) # prior distribution for turnover
-    birth_s = pyabc.Distribution(mu=pyabc.RV("expon", 0, 100)) # prior distribution for birth distribution shape
-    death_s = pyabc.Distribution(mu=pyabc.RV("expon", 0, 100))  # prior distribution for death distribution shape
-    sub_s = pyabc.Distribution(mu=pyabc.RV("expon", 0, 100))  # prior distribution for substitution distribution shape
+    d = elfi.Prior(scipy.stats.expon, 0, .000047) # prior distribution for diversification
+    r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+    birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
+    death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
+    sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
 
     """
     Below are the true parameters for diversification (d) 
@@ -229,19 +231,13 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         tree_real_data = ete3.Tree("(n6:0,((((n4:0,n7:0)8bb16f00-dfee-4f81-ac96-767b993ca6e2:0,((((((n16:0,(h1:17,((((a2:0,a7:0)e7bc4028-414f-4bff-b699-8bd16b23ee7e:18,a3:1)2b854f8d-4936-436e-96c5-910be4aba19c:64,a5:2)816d774c-97d9-43e6-8b2e-f15671af8af2:62,(((h5:3,(a8:3,h8:0)09f1a603-d099-4870-9e79-d6e5bee8e2a3:8)0a18283f-9dc0-491c-9fea-1b8779299e72:30,(((h7:8,(h4:1,h6:0)6fb58ff1-8f8f-487e-893f-a7a5074f5230:22)ee5e30a1-dc03-43f1-9ad0-5a9811fb2360:25,h2:0)50a77d83-30fc-414d-b18b-96e2e4c9866c:10,((a4:3,a6:3)d9afdef5-aa08-4dcc-aa5b-a9b8649d4889:29,a1:0)2913b995-8502-4080-801f-42d014b5d58a:183)9f319495-041d-4361-86c3-785075bb1cf3:54)a6f16d8b-261e-4f09-83ec-99a518991759:82,h3:2)66771a30-0bee-44c5-8282-af5400c18959:149)bb4ffd6c-cf65-4ffb-bce2-cc434482b915:1155)6fffd3b9-b1f8-4bcf-bc47-c92f726cabfb:1325)389c6172-5350-4199-b387-29540a785b5a:42,n13:0)bf915916-25af-4cf4-b258-25422a0360e6:15,n11:0)15a37f26-1ebd-4a43-b3a5-a8962e5e0112:10,n15:0)5c9cf572-6674-45ed-8647-a96c30b2c098:7,n10:0)debcb1ee-4c8a-4db0-be04-25a7ad8e5aad:2,(n8:0,(n5:0,(n14:0,(n3:0,(n12:0,n9:0)ec159609-da23-43d0-814a-4981b51a1b72:0)c05653ec-9a44-4ab2-a5b0-8f3b3d10a41e:0)f7f52196-a2dc-443f-8e1d-54b5e4bb6dc2:0)3fc23945-5205-4af7-aaf8-3271f35280cf:0)ffe9b6b5-e105-4b3c-91e9-9482b268ff34:0)726af8d3-3dfe-49a3-bd23-0dfd36f568ff:0)27ece196-6123-4a35-bc65-db77090f1882:0,n1:0)fb7d141a-3eb9-4dd7-9bbd-8c079d65c0d3:0,n2:0)509e48c2-b79f-4dc2-afe1-67bedf7cc929:0);", format = 1)
         obs = tree_real_data
     else: # simulate observed tree based on artificial true values sampled from the prior distributions 
-        obs = (gen_tree_sims(d_true, r_true, birth_s_true, death_s_true, sub_s_true))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
-
+        obs = (gen_tree_sims(d = d_true, r = r_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
+    obs_nleaf = growtree.tree_nleaf(obs)
     """
     'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
     and shape parameters, and the observed tree ('obs') passed to it as arguments.
     """
-    sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, observed = obs) 
-    
-    def simulate_pyabc():
-        res = gen_tree_sims(d = d, r = r, birth_shape = birth_s, death_shape = death_s, sub_shape = sub_s)
-        return {"data": res}
-
-
+    sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, obs_nleaf, 1, observed = obs) 
     
 
 
@@ -367,26 +363,14 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     dist_scatterplots2 = elfi.Distance('euclidean', summ_depth_variance, summ_branch_mean, summ_height, 
         summ_colless_mean, summ_root_colless)
     
-    dist = dist_scatterplots2 # choosing which distance node to use 
+    #dist = dist_scatterplots2 # choosing which distance node to use 
 
 
-    d = elfi.Distance('wminkowski', summ_depth_variance, p=1, w=1/(sd_lst[0]))
+
+    dist = elfi.Distance('minkowski', summ_depth_variance, p=1)
     batch_size = 1000
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
     result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
-
-
-
-
-    scale_log_file = tempfile.mkstemp(suffix=".json")[1]
-
-    distance_adaptive = pyabc.AdaptivePNormDistance(
-        p=2,
-        scale_function=pyabc.distance.mad,  # method by which to scale
-        scale_log_file=scale_log_file,
-        )
-    abc = pyabc.ABCSMC(simulate_pyabc, d, r, birth_s, death_s, sub_s, distance_adaptive, population_size=batch_size)
-
 
 
 
