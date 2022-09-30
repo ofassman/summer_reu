@@ -21,7 +21,7 @@ def calc_rates_bd(d, r):
     death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
     return [birth_calc, death_calc] # return birth and death rates in an array
 
-def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, leaf_goal = 10, sub_rate = 1, random_state = None):
+def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 1, leaf_goal = 10, sub_rate = 1, is_prior = False, random_state = None):
     """
     Returns a simulated phylogenetic tree (using growtree.gen_tree()) with the 
     initial diversification rate = 'd', initial turnover rate = 'r', initial 
@@ -39,15 +39,31 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     infer distribution shape parameters.
     """
     #print("leafgoal", leaf_goal)
+    d_dist = elfi.Prior(scipy.stats.expon, 0, .0047) 
+    r_dist = elfi.Prior(scipy.stats.uniform, 0, 0.899999999999999999)
     arr = []
     random_state = random_state or np.random # this value is not currently used
-    rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
-    birth = rate_arr[0] # extract initial birth rate from result array
-    death = rate_arr[1] # extract initial death rate from result array
-    #new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
-    new_tree = growtree.gen_tree(b = birth*10, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
-    print("nleaf", growtree.tree_nleaf(new_tree))
-    #print(new_tree)
+    if(is_prior):
+        curr_nleaf = 0
+        while(curr_nleaf < (leaf_goal - 2) or curr_nleaf > (leaf_goal + 5)):
+            d_drawn = gen_param(d_dist)
+            #print("drawn d: ", d_drawn)
+            r_drawn = gen_param(r_dist)
+            rate_arr = calc_rates_bd(d_drawn, r_drawn) # calculate the initial birth and death rates from 'd' and 'r'
+            birth = rate_arr[0] # extract initial birth rate from result array
+            death = rate_arr[1] # extract initial death rate from result array
+            new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
+            curr_nleaf = growtree.tree_nleaf(new_tree)
+            print("nleaf: ", curr_nleaf )
+        #print(new_tree)
+        print("satisfied nleaf condition")
+    else:
+        print("true_d: ", d)
+        rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
+        birth = rate_arr[0] # extract initial birth rate from result array
+        death = rate_arr[1] # extract initial death rate from result array
+        new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
+
     arr.append(new_tree) # simulate tree and place in 1 element array
     
     return arr
@@ -56,14 +72,35 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
 obs_tree_stats = []
 stat_index = 0
 
-
 def tree_stat(tree_arr, summ_fn):
     """
     Applies function 'summ_fn()' to every element of 'tree_arr' and returns
     the array of results. 'summ_fn()' is a summary function that takes in a single
     tree and returns a numerical value (e.g. tree height, mean branch length,
-    colless index). The array of statistics is then normalized by subtracting off the 
-    observed statistic from each element and then dividing by the observed statistic.
+    colless index). 
+    
+    Statistics are weighted using 1/SD of the statistic (using the SD of the 
+    simulated population). This weighting scheme was chosen based on Schalte et al.
+    which describes that a weighted Minkowski distance (weight = 1/SD) is commonly 
+    chosen to normalize statistics. 
+    
+    In ABC-SMC, when going beyond 1 generation, "the distribution of summary statistics 
+    in later generations can differ considerably from prior samples" (Schalte et al.). 
+    Because of this, adaptive distance functions (i.e. adaptive schemes) given in the 
+    ELFI or pyABC packages may be used rather than a simple weighted Minkowski distance. 
+    However, this is not necessary for our current implementation, given that we use only 
+    1-2 generations in ABC-SMC and the distribution of summary statistics between generations 
+    do not vary considerably. This is due to the fact that even from the first generation, 
+    the considered simulations are conditioned on the number of goal_leaves, so within the 
+    first generation, simulated trees look similar to the "true"/observed tree. In later 
+    generations, the simulated trees' distributions of summary statistics may look slightly 
+    different from the first generation's distributions, but due to this conditioning on 
+    number of leaves, the simulated trees are generally much more homogenous in structure 
+    (and thus in calculated statistics) than simulated trees not conditioned on number of leaves. 
+    Thus having distributions of summary statistics in later generations that differ considerably 
+    from the first generation is not an issue and using an adaptive distance scheme is not necessary.
+
+    [Schalte et al.: https://www.biorxiv.org/content/10.1101/2021.07.29.454327v1.full.pdf]
     """
     global obs_tree_stats # holds (or will hold) the observed stats
     global stat_index # keeps track of which stat is the current one
@@ -182,8 +219,8 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     (exclusive). 
     """
 
-    d = elfi.Prior(scipy.stats.expon, 0, .000047) # prior distribution for diversification
-    r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+    d = elfi.Prior(scipy.stats.expon, 0, .0047) # prior distribution for diversification
+    r = elfi.Prior(scipy.stats.uniform, 0, 0.899999999999999999) # prior distribution for turnover
     birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
     death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
     sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
@@ -239,7 +276,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
     and shape parameters, and the observed tree ('obs') passed to it as arguments.
     """
-    sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), d, r, birth_s, death_s, sub_s, obs_nleaf, 1, observed = obs) 
+    sim = elfi.Simulator(elfi.tools.vectorize(gen_tree_sims), 0, 0, birth_s, death_s, sub_s, obs_nleaf, 1, True, observed = obs) 
     
     """
     Below are summary nodes with each node having a unique tree summary statistic function
