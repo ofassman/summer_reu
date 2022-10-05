@@ -6,8 +6,8 @@ import scipy
 import math
 
 # Define prior distributions for parameters (same as in 'abc_tree.py')
-d = elfi.Prior(scipy.stats.expon, 0, .000047) # prior distribution for diversification
-r = elfi.Prior(scipy.stats.uniform, 0, 0.999999999999999999) # prior distribution for turnover
+d_dist = elfi.Prior(scipy.stats.expon, 0, .0047) # prior distribution for diversification
+r_dist = elfi.Prior(scipy.stats.uniform, 0, 0.899999999999999999) # prior distribution for turnover
 birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
 death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
 sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
@@ -48,7 +48,7 @@ def div_rate_v_stats(use_prior = True, N = 100):
     variance_colless_arr = []
 
     # generate rates for non-div parameters (stay constant for all trees generated below)
-    r_rate = abc.gen_param(r)
+    r_rate = abc.gen_param(r_dist)
     birth_shape = abc.gen_param(birth_s)
     death_shape = abc.gen_param(death_s)
     sub_shape = abc.gen_param(sub_s)
@@ -56,17 +56,12 @@ def div_rate_v_stats(use_prior = True, N = 100):
 
     while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
-            d_rate = abc.gen_param(d)
+            d_rate = abc.gen_param(d_dist)
         else:
             d_rate += i * 0.0000005
         d_arr.append(d_rate)
-        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
-        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-        n_leaf = gt.tree_nleaf(t)
-        while(n_leaf < 1): # tree must have at least 1 extant taxa at the current time
-            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-            n_leaf = gt.tree_nleaf(t)
-        
+
+        t = abc.gen_tree_sims(d = d_rate, r = r_rate, birth_shape = birth_shape, death_shape = death_shape, sub_shape = sub_shape, is_prior = True)[0]
         # calc tree stats
         b_sum_arr.append(math.log10(gt.tree_branch_sum(t)+1))
         b_mean_arr.append(math.log10(gt.tree_branch_mean(t)+1))
@@ -77,7 +72,7 @@ def div_rate_v_stats(use_prior = True, N = 100):
         d_median_arr.append(math.log10(gt.tree_depth_median(t)+1))
         d_variance_arr.append(math.log10(gt.tree_depth_variance(t)+1))
         balance_arr.append(math.log10(gt.tree_balance(t)+1))
-        nleaf_arr.append(math.log10(n_leaf+1))
+        nleaf_arr.append(math.log10(gt.tree_nleaf(t)+1))
         root_colless_arr.append(math.log10(gt.tree_root_colless(t)+1))
         sum_colless_arr.append(math.log10(gt.tree_sum_colless(t)+1))
         mean_colless_arr.append(math.log10(gt.tree_mean_colless(t)+1))
@@ -165,7 +160,7 @@ def turn_rate_v_stats(use_prior = True, N = 100):
     variance_colless_arr = []
 
     # generate rates for non-turn parameters (stay constant for all trees generated below)
-    d_rate = abc.gen_param(d)
+    d_rate = abc.gen_param(d_dist)
     birth_shape = abc.gen_param(birth_s)
     death_shape = abc.gen_param(death_s)
     sub_shape = abc.gen_param(sub_s)
@@ -173,16 +168,12 @@ def turn_rate_v_stats(use_prior = True, N = 100):
 
     while(i < N): # 'N' is the number of rates drawn and trees generates
         if(use_prior):
-            r_rate = abc.gen_param(r)
+            r_rate = abc.gen_param(r_dist)
         else: # if use_prior is false, N must be <= 20
             r_rate += i * 0.005
         r_arr.append(r_rate)
-        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
-        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-        n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
-            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-            n_leaf = gt.tree_nleaf(t)
+
+        t = abc.gen_tree_sims(d = d_rate, r = r_rate, birth_shape = birth_shape, death_shape = death_shape, sub_shape = sub_shape, is_prior = True)[0]
         #print(t)
 
         # calc tree stats
@@ -195,7 +186,7 @@ def turn_rate_v_stats(use_prior = True, N = 100):
         d_median_arr.append(math.log10(gt.tree_depth_median(t)+1))
         d_variance_arr.append(math.log10(gt.tree_depth_variance(t)+1))
         balance_arr.append(math.log10(gt.tree_balance(t)+1))
-        nleaf_arr.append(math.log10(n_leaf+1))
+        nleaf_arr.append(math.log10(gt.tree_nleaf(t)+1))
         root_colless_arr.append(math.log10(gt.tree_root_colless(t)+1))
         sum_colless_arr.append(math.log10(gt.tree_sum_colless(t)+1))
         mean_colless_arr.append(math.log10(gt.tree_mean_colless(t)+1))
@@ -282,8 +273,8 @@ def birth_shape_v_stats(use_prior = True, N = 100):
     variance_colless_arr = []
 
     # generate rates for non-birth parameters (stay constant for all trees generated below)
-    d_rate = abc.gen_param(d)
-    r_rate = abc.gen_param(r)
+    d_rate = abc.gen_param(d_dist)
+    r_rate = abc.gen_param(r_dist)
     death_shape = abc.gen_param(death_s)
     sub_shape = abc.gen_param(sub_s)
     i = 0
@@ -294,12 +285,7 @@ def birth_shape_v_stats(use_prior = True, N = 100):
         else:
             birth_shape += i * 2
         birth_s_arr.append(birth_shape)
-        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
-        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-        n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
-            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-            n_leaf = gt.tree_nleaf(t)
+        t = abc.gen_tree_sims(d = d_rate, r = r_rate, birth_shape = birth_shape, death_shape = death_shape, sub_shape = sub_shape, is_prior = True)[0]
         #print(t)
 
         # calc tree stats
@@ -312,7 +298,7 @@ def birth_shape_v_stats(use_prior = True, N = 100):
         d_median_arr.append(math.log10(gt.tree_depth_median(t)+1))
         d_variance_arr.append(math.log10(gt.tree_depth_variance(t)+1))
         balance_arr.append(math.log10(gt.tree_balance(t)+1))
-        nleaf_arr.append(math.log10(n_leaf+1))
+        nleaf_arr.append(math.log10(gt.tree_nleaf(t)+1))
         root_colless_arr.append(math.log10(gt.tree_root_colless(t)+1))
         sum_colless_arr.append(math.log10(gt.tree_sum_colless(t)+1))
         mean_colless_arr.append(math.log10(gt.tree_mean_colless(t)+1))
@@ -399,8 +385,8 @@ def death_shape_v_stats(use_prior = True, N = 100):
     variance_colless_arr = []
 
     # generate rates for non-death parameters (stay constant for all trees generated below)
-    d_rate = abc.gen_param(d)
-    r_rate = abc.gen_param(r)
+    d_rate = abc.gen_param(d_dist)
+    r_rate = abc.gen_param(r_dist)
     birth_shape = abc.gen_param(birth_s)
     sub_shape = abc.gen_param(sub_s)
     i = 0
@@ -411,12 +397,8 @@ def death_shape_v_stats(use_prior = True, N = 100):
         else:
             death_shape += i * 2
         death_s_arr.append(death_shape)
-        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
-        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-        n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
-            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-            n_leaf = gt.tree_nleaf(t)
+        
+        t = abc.gen_tree_sims(d = d_rate, r = r_rate, birth_shape = birth_shape, death_shape = death_shape, sub_shape = sub_shape, is_prior = True)[0]
         #print(t)
 
         # calc tree stats
@@ -429,7 +411,7 @@ def death_shape_v_stats(use_prior = True, N = 100):
         d_median_arr.append(math.log10(gt.tree_depth_median(t)+1))
         d_variance_arr.append(math.log10(gt.tree_depth_variance(t)+1))
         balance_arr.append(math.log10(gt.tree_balance(t)+1))
-        nleaf_arr.append(math.log10(n_leaf+1))
+        nleaf_arr.append(math.log10(gt.tree_nleaf(t)+1))
         root_colless_arr.append(math.log10(gt.tree_root_colless(t)+1))
         sum_colless_arr.append(math.log10(gt.tree_sum_colless(t)+1))
         mean_colless_arr.append(math.log10(gt.tree_mean_colless(t)+1))
@@ -516,8 +498,8 @@ def sub_shape_v_stats(use_prior = True, N = 100):
     variance_colless_arr = []
 
     # generate rates for non-sub parameters (stay constant for all trees generated below)
-    d_rate = abc.gen_param(d)
-    r_rate = abc.gen_param(r)
+    d_rate = abc.gen_param(d_dist)
+    r_rate = abc.gen_param(r_dist)
     birth_shape = abc.gen_param(birth_s)
     death_shape = abc.gen_param(death_s)
     i = 0
@@ -528,12 +510,9 @@ def sub_shape_v_stats(use_prior = True, N = 100):
         else:
             sub_shape += i * 2
         sub_s_arr.append(sub_shape)
-        bd_rates = abc.calc_rates_bd(d_rate, r_rate)
-        t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-        n_leaf = gt.tree_nleaf(t)
-        while(n_leaf == 0): # tree must have at least 1 extant taxa at the current time
-            t = gt.gen_tree(bd_rates[0], bd_rates[1], 1, 50000, birth_shape, death_shape, sub_shape, 1, 100)
-            n_leaf = gt.tree_nleaf(t)
+
+        t = abc.gen_tree_sims(d = d_rate, r = r_rate, birth_shape = birth_shape, death_shape = death_shape, sub_shape = sub_shape, is_prior = True)[0]
+        
         #print(t)
 
         # calc tree stats
@@ -546,7 +525,7 @@ def sub_shape_v_stats(use_prior = True, N = 100):
         d_median_arr.append(math.log10(gt.tree_depth_median(t)+1))
         d_variance_arr.append(math.log10(gt.tree_depth_variance(t)+1))
         balance_arr.append(math.log10(gt.tree_balance(t)+1))
-        nleaf_arr.append(math.log10(n_leaf+1))
+        nleaf_arr.append(math.log10(gt.tree_nleaf(t)+1))
         root_colless_arr.append(math.log10(gt.tree_root_colless(t)+1))
         sum_colless_arr.append(math.log10(gt.tree_sum_colless(t)+1))
         mean_colless_arr.append(math.log10(gt.tree_mean_colless(t)+1))

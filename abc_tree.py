@@ -44,7 +44,7 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     global r_dist
     arr = []
     random_state = random_state or np.random # this value is not currently used
-    if(is_prior):
+    if(is_prior): # using prior dist to simulate trees
         curr_nleaf = 0
         while(curr_nleaf < (leaf_goal - 2) or curr_nleaf > (leaf_goal + 5)):
             d_drawn = gen_param(d_dist)
@@ -58,7 +58,7 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
             print("nleaf: ", curr_nleaf )
         #print(new_tree)
         print("satisfied nleaf condition")
-    else:
+    else: # use artificial true rates to simulate an observed tree
         print("true_d: ", d)
         rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
         birth = rate_arr[0] # extract initial birth rate from result array
@@ -519,4 +519,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
     return res
     
-run_main(is_summary = True, num_accept = 5) # uncomment to run abc directly by running this file
+#run_main(is_summary = True, num_accept = 5) # uncomment to run abc directly by running this file
