@@ -403,7 +403,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     
     #dist = dist_scatterplots2 # choosing which distance node to use 
 
-    dist = elfi.Distance('minkowski', summ_depth_variance, p=1)
+    dist = elfi.Distance('minkowski', summ_height, summ_depth_mean, summ_colless_mean, p=1)
     batch_size = 20
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
     result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
@@ -445,7 +445,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     else: # use ABC SMC
         smc = elfi.SMC(dist, batch_size = batch_size)
         schedule = [2, 1.25] # schedule is a list of thresholds to use for each population
-        short_schedule = [1.25] # use short schedule for 1 round of ABC SMC
+        short_schedule = [3.5] # use short schedule for 1 round of ABC SMC
         result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
 
@@ -463,10 +463,10 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         plt.show() # display the plot of pairwise relationships
 
     # Finding the mean and median inferred rates and shapes below
-    d_infer = result_type.samples['d']
+    d_infer = result_type.samples['d_dist']
     d_infer_mean = np.mean(d_infer)
     d_infer_median = np.median(d_infer)
-    r_infer = result_type.samples['r']
+    r_infer = result_type.samples['r_dist']
     r_infer_mean = np.mean(r_infer)
     r_infer_median = np.median(r_infer)
     bd_infer_mean = calc_rates_bd(d_infer_mean, r_infer_mean) # calculating the mean inferred birth and death rates
