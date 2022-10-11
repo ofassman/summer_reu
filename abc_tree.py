@@ -403,7 +403,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     
     #dist = dist_scatterplots2 # choosing which distance node to use 
 
-    dist = elfi.Distance('minkowski', summ_height, summ_depth_mean, summ_colless_mean, p=1)
+    dist = elfi.Distance('minkowski', summ_branch_sum, summ_height, summ_depth_mean, summ_colless_sum, p=1)
     batch_size = 20
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
     result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
