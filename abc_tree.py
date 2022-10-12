@@ -6,8 +6,8 @@ import ete3
 import matplotlib.pyplot as plt
 import statistics
 
-d_dist = elfi.Prior(scipy.stats.expon, 0, .0047) # prior distribution for diversification
-r_dist = elfi.Prior(scipy.stats.uniform, 0, 0.899999999999999999) # prior distribution for turnover
+d_dist = elfi.Prior(scipy.stats.expon, 0, .047) # prior distribution for diversification
+r_dist = elfi.Prior(scipy.stats.uniform, 0, 0.799) # prior distribution for turnover
 
 def calc_rates_bd(d, r):
     """
@@ -45,7 +45,7 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
     arr = []
     random_state = random_state or np.random # this value is not currently used
     if(is_prior): # using prior dist to simulate trees
-        curr_nleaf = 0
+        curr_nleaf = -9999999999
         while(curr_nleaf < (leaf_goal - 2) or curr_nleaf > (leaf_goal + 5)):
             d_drawn = gen_param(d_dist)
             #print("drawn d: ", d_drawn)
@@ -55,9 +55,9 @@ def gen_tree_sims(d = 1, r = 0.5, birth_shape = 1, death_shape = 1, sub_shape = 
             death = rate_arr[1] # extract initial death rate from result array
             new_tree = growtree.gen_tree(b = birth, d = death, s = sub_rate, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
             curr_nleaf = growtree.tree_nleaf(new_tree)
-            print("nleaf: ", curr_nleaf )
+            #print("nleaf: ", curr_nleaf )
         #print(new_tree)
-        print("satisfied nleaf condition")
+        #print("satisfied nleaf condition")
     else: # use artificial true rates to simulate an observed tree
         print("true_d: ", d)
         rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
@@ -270,9 +270,20 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         obs = tree_real_data
     else: # simulate observed tree based on artificial true values sampled from the prior distributions 
         obs = (gen_tree_sims(d = d_true, r = r_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true, is_prior = False))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
+        while(growtree.tree_nleaf(obs) < 10): # artificial obs tree must have at least 10 leaves
+            d_true = gen_param(d_dist)
+            r_true = gen_param(r_dist)
+            rate_arr = calc_rates_bd(d_true, r_true) 
+            birth_true = rate_arr[0]
+            death_true = rate_arr[1]
+            birth_s_true = gen_param(birth_s)
+            death_s_true = gen_param(death_s)
+            sub_s_true = gen_param(sub_s)
+            obs = (gen_tree_sims(d = d_true, r = r_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true, is_prior = False))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
+        
     obs_nleaf = growtree.tree_nleaf(obs)
     
-    print("sim: ", obs_nleaf)
+    print("obs leaves: ", obs_nleaf)
 
     """
     'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
@@ -404,6 +415,10 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     #dist = dist_scatterplots2 # choosing which distance node to use 
 
     dist = elfi.Distance('minkowski', summ_branch_sum, summ_height, summ_depth_mean, summ_colless_sum, p=1)
+    dist_all = elfi.Distance('minkowski', summ_branch_sum, summ_branch_mean, summ_branch_median, 
+        summ_branch_variance, summ_height, summ_depth_mean, summ_depth_median, summ_depth_variance, 
+        summ_balance, summ_nleaves, summ_root_colless, summ_colless_sum, summ_colless_mean, 
+        summ_colless_median, summ_colless_variance, p=1)
     batch_size = 20
     N = num_accept # number of accepted samples needed in 'result' in the sampling below
     result_type = None # will specify which type of sampling is used (threshold or quantile for rejection or smc for SMC ABC)
@@ -445,8 +460,9 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     else: # use ABC SMC
         smc = elfi.SMC(dist, batch_size = batch_size)
         schedule = [2, 1.25] # schedule is a list of thresholds to use for each population
-        short_schedule = [3.5] # use short schedule for 1 round of ABC SMC
-        result_smc = smc.sample(N, short_schedule)
+        long_schedule = [2, 1.25, .75]
+        short_schedule = [2] # use short schedule for 1 round of ABC SMC
+        result_smc = smc.sample(N, long_schedule)
         result_type = result_smc
 
     if is_summary: # printing a brief summary of the inferred rates and shapes
@@ -519,4 +535,4 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
 
     return res
     
-#run_main(is_summary = True, num_accept = 5) # uncomment to run abc directly by running this file
+run_main(is_summary = True, is_print = True, num_accept = 25, isreal_obs=False) # uncomment to run abc directly by running this file
