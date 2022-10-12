@@ -223,9 +223,9 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     global d_dist
     global r_dist
     
-    birth_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for birth distribution shape
-    death_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for death distribution shape
-    sub_s = elfi.Prior(scipy.stats.expon, 0, 100) # prior distribution for substitution distribution shape
+    birth_s = elfi.Prior(scipy.stats.expon, 0, 25) # prior distribution for birth distribution shape
+    death_s = elfi.Prior(scipy.stats.expon, 0, 25) # prior distribution for death distribution shape
+    sub_s = elfi.Prior(scipy.stats.expon, 0, 25) # prior distribution for substitution distribution shape
 
     """
     Below are the true parameters for diversification (d) 
