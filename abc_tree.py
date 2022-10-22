@@ -414,7 +414,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     
     #dist = dist_scatterplots2 # choosing which distance node to use 
 
-    dist = elfi.Distance('minkowski', summ_branch_sum, summ_height, summ_depth_mean, summ_colless_sum, p=1)
+    dist = elfi.Distance('minkowski', summ_branch_sum, summ_height, summ_depth_mean, summ_colless_sum, summ_colless_variance, p=1)
     dist_all = elfi.Distance('minkowski', summ_branch_sum, summ_branch_mean, summ_branch_median, 
         summ_branch_variance, summ_height, summ_depth_mean, summ_depth_median, summ_depth_variance, 
         summ_balance, summ_nleaves, summ_root_colless, summ_colless_sum, summ_colless_mean, 
