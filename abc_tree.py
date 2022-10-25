@@ -1,3 +1,4 @@
+from ast import Delete
 import elfi
 import growtree
 import numpy as np
@@ -5,10 +6,13 @@ import scipy
 import ete3
 import matplotlib.pyplot as plt
 import statistics
+import random
+import math
 
 d_dist = elfi.Prior(scipy.stats.expon, 0, 1) # prior distribution for diversification
 r_dist = elfi.Prior(scipy.stats.uniform, 0, 1) # prior distribution for turnover
-sub_dist = elfi.Prior(scipy.stats.uniform, 0, 1) # prior distribution for turnover
+sub_dist = elfi.Prior(scipy.stats.uniform, 0, 1) # prior distribution for sub
+sampling_rate_arr = []
 
 def calc_rates_bd(d, r):
     """
@@ -23,6 +27,32 @@ def calc_rates_bd(d, r):
     birth_calc = d / (1 - r) # calculate birth rate from 'd' and 'r'
     death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
     return [birth_calc, death_calc] # return birth and death rates in an array
+
+def sample_leaves(tree, goal_leaves):
+    global sampling_rate_arr
+    curr_leaves = growtree.tree_nleaf(tree)
+    print(curr_leaves)
+    sampling_rate = goal_leaves/curr_leaves
+    sampling_rate_arr.append(sampling_rate)
+    num_delete_goal = math.ceil(curr_leaves * (1-sampling_rate))
+    delete_counter = 0
+    while(delete_counter < num_delete_goal):
+        for leaf in tree:
+            if(delete_counter >= num_delete_goal):
+                break
+            if(leaf.is_leaf()):
+                rng = random.random()
+                if(rng >= sampling_rate): # delete this leaf
+                    #leaf.detach()
+                    if leaf.up.children[0] == leaf:
+                        leaf.up.children[0] = None
+                    else:
+                        leaf.up.children[1] = None
+                    delete_counter += 1
+    print("sampled leaves ", growtree.tree_nleaf(tree))
+    #print(tree)
+    return tree
+
 
 def gen_tree_sims(d = 1, r = 0.5, sub_rate = 1, birth_shape = 1, death_shape = 1, sub_shape = 1, leaf_goal = 10, is_prior = False, random_state = None):
     """
@@ -52,17 +82,20 @@ def gen_tree_sims(d = 1, r = 0.5, sub_rate = 1, birth_shape = 1, death_shape = 1
             d_drawn = gen_param(d_dist)
             #print("drawn d: ", d_drawn)
             r_drawn = gen_param(r_dist)
+            while(r_drawn>=1):
+                r_drawn = gen_param(r_dist)
             s_drawn = gen_param(sub_dist)
             rate_arr = calc_rates_bd(d_drawn, r_drawn) # calculate the initial birth and death rates from 'd' and 'r'
             birth = rate_arr[0] # extract initial birth rate from result array
             death = rate_arr[1] # extract initial death rate from result array
             new_tree = growtree.gen_tree(b = birth, d = death, s = s_drawn, shape_b = birth_shape, shape_d = death_shape, shape_s = sub_shape, branch_info = 1, seq_length = 100, goal_leaves=leaf_goal)
             curr_nleaf = growtree.tree_nleaf(new_tree)
-            print("nleaf: ", curr_nleaf )
-        print(new_tree)
-        print("satisfied nleaf condition")
+            #print("nleaf: ", curr_nleaf )
+        new_tree = sample_leaves(new_tree, leaf_goal)
+        #print(new_tree)
+        #print("satisfied nleaf condition", growtree.tree_nleaf(new_tree))
     else: # use artificial true rates to simulate an observed tree
-        print("true_d: ", d)
+        #print("true_d: ", d)
         rate_arr = calc_rates_bd(d, r) # calculate the initial birth and death rates from 'd' and 'r'
         birth = rate_arr[0] # extract initial birth rate from result array
         death = rate_arr[1] # extract initial death rate from result array
@@ -226,6 +259,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     global d_dist
     global r_dist
     global sub_dist
+    global sampling_rate_arr
     
     birth_s = elfi.Prior(scipy.stats.expon, 0, 25) # prior distribution for birth distribution shape
     death_s = elfi.Prior(scipy.stats.expon, 0, 25) # prior distribution for death distribution shape
@@ -243,7 +277,9 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     """
     d_true = gen_param(d_dist)
     r_true = gen_param(r_dist)
-    s_true = gen_param(sub_dist)
+    while(r_true>=1):
+        r_true = gen_param(r_dist)
+    sub_true = gen_param(sub_dist)
 
     """
     Below are the true parameters for birth and death rates. 
@@ -274,22 +310,22 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         tree_real_data = ete3.Tree("(n6:0,((((n4:0,n7:0)8bb16f00-dfee-4f81-ac96-767b993ca6e2:0,((((((n16:0,(h1:17,((((a2:0,a7:0)e7bc4028-414f-4bff-b699-8bd16b23ee7e:18,a3:1)2b854f8d-4936-436e-96c5-910be4aba19c:64,a5:2)816d774c-97d9-43e6-8b2e-f15671af8af2:62,(((h5:3,(a8:3,h8:0)09f1a603-d099-4870-9e79-d6e5bee8e2a3:8)0a18283f-9dc0-491c-9fea-1b8779299e72:30,(((h7:8,(h4:1,h6:0)6fb58ff1-8f8f-487e-893f-a7a5074f5230:22)ee5e30a1-dc03-43f1-9ad0-5a9811fb2360:25,h2:0)50a77d83-30fc-414d-b18b-96e2e4c9866c:10,((a4:3,a6:3)d9afdef5-aa08-4dcc-aa5b-a9b8649d4889:29,a1:0)2913b995-8502-4080-801f-42d014b5d58a:183)9f319495-041d-4361-86c3-785075bb1cf3:54)a6f16d8b-261e-4f09-83ec-99a518991759:82,h3:2)66771a30-0bee-44c5-8282-af5400c18959:149)bb4ffd6c-cf65-4ffb-bce2-cc434482b915:1155)6fffd3b9-b1f8-4bcf-bc47-c92f726cabfb:1325)389c6172-5350-4199-b387-29540a785b5a:42,n13:0)bf915916-25af-4cf4-b258-25422a0360e6:15,n11:0)15a37f26-1ebd-4a43-b3a5-a8962e5e0112:10,n15:0)5c9cf572-6674-45ed-8647-a96c30b2c098:7,n10:0)debcb1ee-4c8a-4db0-be04-25a7ad8e5aad:2,(n8:0,(n5:0,(n14:0,(n3:0,(n12:0,n9:0)ec159609-da23-43d0-814a-4981b51a1b72:0)c05653ec-9a44-4ab2-a5b0-8f3b3d10a41e:0)f7f52196-a2dc-443f-8e1d-54b5e4bb6dc2:0)3fc23945-5205-4af7-aaf8-3271f35280cf:0)ffe9b6b5-e105-4b3c-91e9-9482b268ff34:0)726af8d3-3dfe-49a3-bd23-0dfd36f568ff:0)27ece196-6123-4a35-bc65-db77090f1882:0,n1:0)fb7d141a-3eb9-4dd7-9bbd-8c079d65c0d3:0,n2:0)509e48c2-b79f-4dc2-afe1-67bedf7cc929:0);", format = 1)
         obs = tree_real_data
     else: # simulate observed tree based on artificial true values sampled from the prior distributions 
-        obs = (gen_tree_sims(d = d_true, r = r_true, sub_rate = s_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true, is_prior = False))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
+        obs = (gen_tree_sims(d = d_true, r = r_true, sub_rate = sub_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true, is_prior = False))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
         while(growtree.tree_nleaf(obs) < 10): # artificial obs tree must have at least 10 leaves
             d_true = gen_param(d_dist)
             r_true = gen_param(r_dist)
-            s_true = gen_param(sub_dist)
+            sub_true = gen_param(sub_dist)
             rate_arr = calc_rates_bd(d_true, r_true) 
             birth_true = rate_arr[0]
             death_true = rate_arr[1]
             birth_s_true = gen_param(birth_s)
             death_s_true = gen_param(death_s)
             sub_s_true = gen_param(sub_s)
-            obs = (gen_tree_sims(d = d_true, r = r_true, sub_rate = s_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true, is_prior = False))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
+            obs = (gen_tree_sims(d = d_true, r = r_true, sub_rate = sub_true, birth_shape = birth_s_true, death_shape = death_s_true, sub_shape = sub_s_true, is_prior = False))[0] # observed tree (tree simulated with true rate and distribution shape parameters)
         
     obs_nleaf = growtree.tree_nleaf(obs)
     
-    print("obs leaves: ", obs_nleaf)
+    #print("obs leaves: ", obs_nleaf)
 
     """
     'sim' is a simulator node with the 'gen_tree_sims()' function, the prior distributions of rate 
@@ -468,7 +504,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         schedule = [2, 1.25] # schedule is a list of thresholds to use for each population
         long_schedule = [2, 1.25, .75]
         short_schedule = [2] # use short schedule for 1 round of ABC SMC
-        result_smc = smc.sample(N, long_schedule)
+        result_smc = smc.sample(N, short_schedule)
         result_type = result_smc
 
     if is_summary: # printing a brief summary of the inferred rates and shapes
@@ -491,6 +527,9 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     r_infer = result_type.samples['r_dist']
     r_infer_mean = np.mean(r_infer)
     r_infer_median = np.median(r_infer)
+    sub_infer = result_type.samples['sub_dist']
+    sub_infer_mean = np.mean(sub_infer)
+    sub_infer_median = np.median(sub_infer)
     bd_infer_mean = calc_rates_bd(d_infer_mean, r_infer_mean) # calculating the mean inferred birth and death rates
     bd_infer_median = calc_rates_bd(d_infer_median, r_infer_median) # calculating the median inferred birth and death rates
     birth_s_infer = result_type.samples['birth_s']
@@ -502,6 +541,8 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         print("median inferred diversification rate: " + str(d_infer_median))
         print("mean inferred turnover rate: " + str(r_infer_mean))
         print("median inferred turnover rate: " + str(r_infer_median))
+        print("mean inferred sub rate: " + str(sub_infer_mean))
+        print("median inferred sub rate: " + str(sub_infer_median))
         print("mean inferred birth rate: " + str(bd_infer_mean[0]))
         print("median inferred birth rate: " + str(bd_infer_median[0]))
         print("mean inferred death rate: " + str(bd_infer_mean[1]))
@@ -518,6 +559,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
         # Displaying the true rates and shapes below to compare to the inferred rates and shapes
         print("true diversification rate: " + str(d_true))
         print("true turnover rate: " + str(r_true))
+        print("true sub rate: " + str(sub_true))
         print("true birth rate: " + str(birth_true))
         print("true death rate: " + str(death_true))
         print("true birth distribution shape: " + str(birth_s_true))
@@ -527,6 +569,7 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     res = [] # result array that will hold the inferred rates and the observed tree
     res.append(d_infer)
     res.append(r_infer)
+    res.append(sub_infer)
     res.append(birth_s_infer)
     res.append(death_s_infer)
     res.append(sub_s_infer)
@@ -535,10 +578,13 @@ def run_main(num_accept = 100, isreal_obs = True, is_rej = False, sampling_type 
     if(not(isreal_obs)): # include the artificial true rates in the result array 
         res.append(d_true)
         res.append(r_true)
+        res.append(sub_true)
         res.append(birth_s_true)
         res.append(death_s_true)
         res.append(sub_s_true)
 
+    # reset global var
+    sampling_rate_arr = []
     return res
     
-run_main(is_summary = True, is_print = True, num_accept = 25, isreal_obs=False) # uncomment to run abc directly by running this file
+run_main(is_summary = True, is_print = True, num_accept = 10, isreal_obs=True) # uncomment to run abc directly by running this file

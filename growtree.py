@@ -155,7 +155,9 @@ def growtree_old(seq, b, d, s, shape_b, shape_d, shape_s, branch_info, goal_nlea
     while(__curr_lineages != 0 and __curr_lineages <= goal_nleaf): 
         # finding the wait time to any event (b, d, or s) based on rates
         curr_time = 0
+        print(rate_any_event)
         rate_any_event = sum_dict(__lineage_dict) # sum of all the rates for all extant lineages
+        print("rate", rate_any_event)
         wait_time = rng.expovariate(rate_any_event)
         curr_time += wait_time
 
@@ -277,8 +279,11 @@ def growtree(seq, b, d, s, max_time, shape_b, shape_d, shape_s, branch_info):
     curr_time = 0
     
     while(curr_time <= max_time):
-        print(curr_time)
+        if (__curr_lineages == 0):
+            return t
+        #print(curr_time)
         rate_any_event = sum_dict(__lineage_dict) # sum of all the rates for all extant lineages
+        #print(rate_any_event)
         wait_time = rng.expovariate(rate_any_event)
         curr_time += wait_time
     
@@ -297,6 +302,7 @@ def growtree(seq, b, d, s, max_time, shape_b, shape_d, shape_s, branch_info):
         # 'event' holds the event that just occurred as a string, 'curr_t' holds the TreeNode object (lineage) on which the event occurred
         event = event_pair[1]
         curr_t = event_lineage_key
+        #print(event)
 
         # extracting the attributes associated with the lineage of interest (where the event will occur)
         curr_seq = __seq_dict[curr_t.name] # getting the current lineage's sequence
@@ -310,11 +316,7 @@ def growtree(seq, b, d, s, max_time, shape_b, shape_d, shape_s, branch_info):
         # if branch length is a variable of expected number of substitutions, add this expected number onto this lineage's branch length
         if(branch_info == 2): 
             curr_t.dist += curr_s * wait_time
-
-
-
-
-        
+       
     
         if(event == "birth"): # recursively call fn for children, same rates but different max_time
             __curr_lineages += 1 # increase the number of extant lineages by 1 (1 extant linage turns into 2)

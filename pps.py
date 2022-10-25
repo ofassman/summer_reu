@@ -7,10 +7,11 @@ rates_arr = abc_tree.run_main(is_summary = True, is_plot = True, num_accept=75) 
 # extract specific arrays of inferred rates
 d_rate_arr = rates_arr[0]
 r_rate_arr = rates_arr[1]
-birth_s_arr = rates_arr[2]
-death_s_arr = rates_arr[3]
-sub_s_arr = rates_arr[4]
-obs_tree = rates_arr[5]
+sub_rate_arr = rates_arr[2]
+birth_s_arr = rates_arr[3]
+death_s_arr = rates_arr[4]
+sub_s_arr = rates_arr[5]
+obs_tree = rates_arr[6]
 
 n_sims = len(d_rate_arr) # number of trees that will be simulated from the rates that make up the posterior distributions
 obs_nleaves = gt.tree_nleaf(obs_tree)
@@ -29,7 +30,7 @@ sum_colless_obs = gt.tree_sum_colless(obs_tree)
 
 while i < n_sims: # generating posterior simulated trees and calculating statistics 
         # generating the posterior simulated tree (using rates from the posterior distributions)
-    sim_tree = abc_tree.gen_tree_sims(d = d_rate_arr[i], r = r_rate_arr[i], birth_shape = birth_s_arr[i], death_shape = death_s_arr[i], sub_shape = sub_s_arr[i], is_prior = True, leaf_goal=obs_nleaves)[0]
+    sim_tree = abc_tree.gen_tree_sims(d = d_rate_arr[i], r = r_rate_arr[i], sub_rate = sub_rate_arr[i], birth_shape = birth_s_arr[i], death_shape = death_s_arr[i], sub_shape = sub_s_arr[i], is_prior = True, leaf_goal=obs_nleaves)[0]
     i += 1
 
     # calculating the summary statistics on the posterior simulated tree 
