@@ -9,7 +9,7 @@ import statistics
 import random
 import math
 
-d_dist = elfi.Prior(scipy.stats.expon, 0, 1) # prior distribution for diversification
+d_dist = elfi.Prior(scipy.stats.expon, 0, 6) # prior distribution for diversification
 r_dist = elfi.Prior(scipy.stats.uniform, 0, 1) # prior distribution for turnover
 sub_dist = elfi.Prior(scipy.stats.uniform, 0, 1) # prior distribution for sub
 sampling_rate_arr = []
@@ -28,6 +28,24 @@ def calc_rates_bd(d, r):
     death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
     return [birth_calc, death_calc] # return birth and death rates in an array
 
+def get_leaves(t, lst_leaves):
+    """
+    Returns array of leaves in a tree.
+    """
+    if(t == None): # empty tree
+        return lst_leaves
+    if(t.is_leaf()): # node is leaf 
+        return lst_leaves.append(t)
+    lst_leaves = []
+    num_c = len(t.children)  
+    if(num_c == 1): # tree with 1 child
+        lst_leaves = get_leaves(t.children[0],lst_leaves)
+    elif(num_c == 2): # tree with 2 children
+        lst_leaves = get_leaves(t.children[0],lst_leaves)
+        lst_leaves = get_leaves(t.children[1],lst_leaves) # add leaves of both children
+    return lst_leaves
+
+
 def sample_leaves(tree, goal_leaves):
     global sampling_rate_arr
     curr_leaves = growtree.tree_nleaf(tree)
@@ -35,20 +53,12 @@ def sample_leaves(tree, goal_leaves):
     sampling_rate = goal_leaves/curr_leaves
     sampling_rate_arr.append(sampling_rate)
     num_delete_goal = math.ceil(curr_leaves * (1-sampling_rate))
-    delete_counter = 0
-    while(delete_counter < num_delete_goal):
-        for leaf in tree:
-            if(delete_counter >= num_delete_goal):
-                break
-            if(leaf.is_leaf()):
-                rng = random.random()
-                if(rng >= sampling_rate): # delete this leaf
-                    #leaf.detach()
-                    if leaf.up.children[0] == leaf:
-                        leaf.up.children[0] = None
-                    else:
-                        leaf.up.children[1] = None
-                    delete_counter += 1
+    leaf_lst = get_leaves(tree,[])
+    print(len(leaf_lst))
+    deleted_leaf_lst = random.sample(leaf_lst,k=num_delete_goal)
+    for leaf in deleted_leaf_lst:
+        leaf.delete()
+
     print("sampled leaves ", growtree.tree_nleaf(tree))
     #print(tree)
     return tree
