@@ -28,15 +28,17 @@ def calc_rates_bd(d, r):
     death_calc = r * birth_calc # calculate death rate from calculated birth rate and 'r'
     return [birth_calc, death_calc] # return birth and death rates in an array
 
+    """
 def get_leaves(t, lst_leaves):
-    """
+
     Returns array of leaves in a tree.
-    """
+
+    print(lst_leaves)
+    print(t)
     if(t == None): # empty tree
         return lst_leaves
     if(t.is_leaf()): # node is leaf 
         return lst_leaves.append(t)
-    lst_leaves = []
     num_c = len(t.children)  
     if(num_c == 1): # tree with 1 child
         lst_leaves = get_leaves(t.children[0],lst_leaves)
@@ -44,7 +46,7 @@ def get_leaves(t, lst_leaves):
         lst_leaves = get_leaves(t.children[0],lst_leaves)
         lst_leaves = get_leaves(t.children[1],lst_leaves) # add leaves of both children
     return lst_leaves
-
+    """
 
 def sample_leaves(tree, goal_leaves):
     global sampling_rate_arr
@@ -53,8 +55,8 @@ def sample_leaves(tree, goal_leaves):
     sampling_rate = goal_leaves/curr_leaves
     sampling_rate_arr.append(sampling_rate)
     num_delete_goal = math.ceil(curr_leaves * (1-sampling_rate))
-    leaf_lst = get_leaves(tree,[])
-    print(len(leaf_lst))
+    leaf_lst = tree.get_leaves()
+    #print(len(leaf_lst))
     deleted_leaf_lst = random.sample(leaf_lst,k=num_delete_goal)
     for leaf in deleted_leaf_lst:
         leaf.delete()

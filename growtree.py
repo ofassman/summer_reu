@@ -281,7 +281,7 @@ def growtree(seq, b, d, s, max_time, shape_b, shape_d, shape_s, branch_info):
     while(curr_time <= max_time):
         if (__curr_lineages == 0):
             return t
-        #print(curr_time)
+        print(curr_time)
         rate_any_event = sum_dict(__lineage_dict) # sum of all the rates for all extant lineages
         #print(rate_any_event)
         wait_time = rng.expovariate(rate_any_event)
